@@ -9,180 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <style>
-    :root{
-      /* === 你的藍色系 === */
-      --classic-blue:#34558b;
-      --provence:#678fc9;
-      --baby-blue:#bfd2dd;
-      --monument:#7b858a;
-      --stucco:#9b8577;
-
-      --primary:var(--classic-blue);
-      --ink:#1c2430;
-      --bg:#f4f6f8;
-      --card:#ffffff;
-      --line:#e6ebf1;
-
-      --spin-color:#7f93b1;
-      --spin-fade:1.2s;
-
-      /* 既有用色（診別/叫號） */
-      --early-light:#e7f7ee; --early-dark:#cfeedd; --early-bar:#16a34a;
-      --noon-light:#fff3df;  --noon-dark:#ffe4b3;  --noon-bar:#f59e0b;
-      --night-light:#e8f2ff; --night-dark:#cfe2ff; --night-bar:#3b82f6;
-      --appt-light:#f9e0f5;  --appt-dark:#f3b3e6;  --appt-bar:#b51695;
-      --queue-orange:#f59e0b; --queue-orange-600:#d97706; --queue-orange-700:#b45309;
-      --coral:#ff7f50; --stop-red:#d32f2f; --query-green:#148f3f; --black:#000;
-
-      --border: var(--line);
-      --primary-600:#2b4575;
-    }
-
-    /* ====== 全站標楷體 ====== */
-    body{
-      font-family:"DFKai-SB","BiauKai","TW-Kai","PMingLiU","MingLiU","Noto Sans TC","Microsoft JhengHei",serif;
-      background:linear-gradient(160deg,#ecf1f6,#e6edf6);
-      min-height:100vh;color:#334155;-webkit-tap-highlight-color: transparent;
-    }
-
-    /* ★ 卡片/統計卡/表格容器全改直角 */
-    .card{ border-radius:0; border:2px solid var(--border); box-shadow:0 6px 14px rgba(0,0,0,.06); overflow:hidden; }
-    .stat{ border:2px dashed var(--border); border-radius:0; padding:.9rem 1rem; background:#fff; display:flex; align-items:center; gap:.9rem; box-shadow:0 4px 10px rgba(0,0,0,.04); overflow:hidden; }
-    .table{ border-radius:0; overflow:hidden; margin:0; }
-
-    /* ====== 全站方形按鈕 ====== */
-    .btn{ border-radius:0 !important; font-weight:700; border:0; }
-    .btn-main{ background:var(--primary); color:#fff !important; }
-    .btn-main:hover, .btn-main.active{ background:var(--primary-600); color:#fff !important; }
-    .btn-ghost{ background:#94a3b8; color:#fff !important; }
-    .btn-ghost:hover, .btn-ghost.active{ background:#64748b; color:#fff !important; }
-    .btn-warning{ background:var(--queue-orange); color:#fff !important; }
-    .btn-warning:hover{ background:var(--queue-orange-600); color:#fff !important; }
-    .btn-danger{ background:#dc3545; color:#fff !important; }
-    .btn-danger:hover{ background:#b02a37; color:#fff !important; }
-
-    .login-card{ display:grid; place-items:center; min-height:calc(100vh - 6rem); padding:3rem 1rem; }
-    .login-card .card{ width:100%; max-width:460px; padding:28px 24px; }
-    .login-card .header{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }
-    .login-card .logo{ width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background:var(--primary); color:#fff; font-weight:900; font-size:28px; line-height:1; box-shadow:0 8px 18px rgba(59,105,125,.25); }
-    .login-card h1{ font-weight:900; }
-    /* 原本圓角的輸入框統一變直角 */
-    .login-card .form-control{ border-radius:0 !important; padding:.675rem .95rem; border:2px solid #d1d5db; }
-    .login-card .form-control:focus{ border-color:var(--primary); box-shadow:0 0 0 .2rem rgba(59,105,125,.2); outline:none; }
-
-    .card-head{ display:flex; align-items:center; gap:12px; }
-    .card-head .logo{ width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--primary); color:#fff; font-weight:900; font-size:24px; line-height:1; box-shadow:0 6px 14px rgba(59,105,125,.18); }
-    .card-head h3{ font-weight:900; }
-    .card-head .subtitle{ margin-top:2px; font-size:.95rem; color:#64748b; }
-    .card-head .subtitle b{ color:#0f172a; font-weight:900; }
-
-    .tabbar{ gap:.5rem; flex-wrap:wrap; }
-    .tabbar .btn{ padding:.55rem 1rem; }
-    .tabbar .btn:not(.active){ background:#6b7a90; color:#fff; }
-    .tabbar .btn.active{ background:var(--primary-600); color:#fff; box-shadow:0 6px 14px rgba(47,85,101,.28); }
-
-    .date-nav{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .5rem; }
-    .date-nav .form-control{ width:160px; }
-    .totals{ font-weight:900; color:#1f3f57; } .totals .muted{ color:#6b7a90; font-weight:800; }
-
-    /* 讓「早診／午診／晚診／約診」的膠囊變直角 */
-    .stat .cap{padding:.35rem .7rem;border-radius:0 !important;font-weight:900;line-height:1;}
-    .stat .kv{font-weight:800}
-    .stat .note{color:#6b7280;font-weight:700}
-    .stat-early{ background:var(--early-light); border-color:var(--early-bar); }
-    .stat-early .cap{ background:#dff5ea; color:#065f46; border:1px solid #b8ead4; }
-    .stat-noon{  background:var(--noon-light);  border-color:var(--noon-bar); }
-    .stat-noon  .cap{ background:#ffeccd; color:#7a4d00; border:1px solid #ffd69a; }
-    .stat-night{ background:var(--night-light); border-color:var(--night-bar); }
-    .stat-night .cap{ background:#e1ecff; color:#1d4ed8; border:1px solid #c7dbff; }
-    .stat-appt{  background:var(--appt-light);  border-color:var(--appt-bar); }
-    .stat-appt .cap{ background:#ffe0ef; color:#9d174d; border:1px solid #f9b3d1; }
-
-    .table td{ border-top:2px solid #e5e7eb !important; }
-    .table thead th{ border-bottom:2px solid #cbd5e1 !important; font-weight:900; }
-
-    tr.slot-early-light  > *{ background:var(--early-light) !important; }
-    tr.slot-early-dark   > *{ background:var(--early-dark)  !important; }
-    tr.slot-noon-light   > *{ background:var(--noon-light)  !important; }
-    tr.slot-noon-dark    > *{ background:var(--noon-dark)   !important; }
-    tr.slot-night-light  > *{ background:var(--night-light) !important; }
-    tr.slot-night-dark   > *{ background:var(--night-dark)  !important; }
-    tr.slot-appt-light   > *{ background:var(--appt-light)  !important; }
-    tr.slot-appt-dark    > *{ background:var(--appt-dark)   !important; }
-
-    tr[class^="slot-early"] td:first-child{ box-shadow:inset 6px 0 0 0 var(--early-bar); }
-    tr[class^="slot-noon"]  td:first-child{ box-shadow:inset 6px 0 0 0 var(--noon-bar); }
-    tr[class^="slot-night"] td:first-child{ box-shadow:inset 6px 0 0 0 var(--night-bar); }
-    tr[class^="slot-appt"]  td:first-child{ box-shadow:inset 6px 0 0 0 var(--appt-bar); }
-
-    .tag{ display:inline-block; width:.8em; height:.8em; border-radius:50%; margin-right:.4em; vertical-align:middle; }
-    .tag-early{ background:var(--early-bar); } .tag-noon{ background:var(--noon-bar); }
-    .tag-night{ background:var(--night-bar); } .tag-appt{ background:var(--appt-bar); }
-    .small-note{ color:#64748b; font-size:.925rem; }
-    .small-note code{ background:#f6f7fb; padding:.1rem .25rem; border-radius:6px; }
-
-    .btn-queue{ background:var(--queue-orange) !important; color:#fff !important; }
-    .btn-queue:hover{ background:var(--queue-orange-600) !important; color:#fff !important; }
-    .tabbar .btn-queue.active{ background:var(--queue-orange-700) !important; box-shadow:0 6px 14px rgba(245,158,11,.32) !important; }
-
-    #tab-queue .stat{ border-color:var(--queue-orange); }
-
-    /* 叫號區塊：目前號碼的標籤也維持直角 */
-    #tab-queue .cap.cap-pill{ border-radius:0 !important; }
-
-    .q-now-input{
-      width: clamp(140px, 42vw, 260px);
-      font-size: clamp(40px, 12vw, 86px);
-      font-weight:900; color:#d90429; text-align:center; letter-spacing:1px;
-      border-radius:0 !important;
-      border:2px solid var(--queue-orange); background:#fffaf2; -moz-appearance:textfield;
-    }
-    .q-now-input::-webkit-outer-spin-button, .q-now-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-    @supports (-webkit-touch-callout: none){ .q-now-input{ font-variant-numeric: tabular-nums; } }
-
-    /* 叫號步進按鈕直角 */
-    .q-step{ width:56px; height:56px; border-radius:0; font-size:30px; font-weight:900; line-height:1; padding:0; }
-    .q-now-row{ align-items:center; gap:12px; flex-wrap:wrap; }
-    .q-actions{ display:flex; align-items:center; gap:12px; margin-left:auto; }
-
-    /* 叫號主要/重置/儲存按鈕直角 */
-    #qSet, #qReset, #qSaveFlags{
-      border-radius:0 !important; padding:.60rem 1.20rem !important; font-size:1.05rem !important; font-weight:900 !important; line-height:1 !important; min-width:130px !important;
-    }
-    #qReset{ background:#b51695 !important; color:#fff !important; border-color:#b51695 !important; }
-    #qReset:hover{ background:#9b127f !important; border-color:#9b127f !important; color:#fff !important; }
-
-    /* ====== 全站輸入框一律直角 ====== */
-    input, select, textarea, .form-control, .form-select{ border-radius:0 !important; }
-
-    /* Switch 改成方形checkbox風格 */
-    .form-switch .form-check-input{
-      width:1.4em; height:1.4em;
-      border-radius:0 !important;
-      background-image:none !important;
-      background-color:#fff; border:2px solid #64748b;
-    }
-    .form-switch .form-check-input:checked{
-      background-color:var(--primary);
-      border-color:var(--primary);
-    }
-
-    /* 停診徽章直角（已是直角，保留） */
-    .badge{ border-radius:0 !important; }
-
-    @media (max-width: 575.98px){
-      .q-step{ width:48px; height:48px; font-size:26px; }
-      .q-now-row{ justify-content:center; }
-      .q-actions{ margin-left:0; flex-basis:100%; justify-content:space-between; margin-top:.35rem; }
-      #qSet, #qReset{ padding:.48rem .9rem !important; font-size:.98rem !important; min-width:0 !important; }
-      .qlabel{ font-size:1.1rem; }
-      .stat{ padding:.8rem .85rem; }
-    }
-  </style>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="admin-page">
 <!-- Login -->
 <div id="login" class="container login-card">
   <div class="card">
@@ -207,8 +36,8 @@
 </div>
 
 <!-- App -->
-<div id="app" style="display:none;">
-  <div class="container py-3" style="max-width:1180px;">
+<div id="app" class="is-hidden">
+  <div class="container py-3 admin-container">
     <div class="card-head mb-3">
       <div class="logo">＋</div>
       <div>
@@ -257,7 +86,7 @@
             <thead>
               <tr>
                 <th>診別</th><th>時段</th><th>號碼</th><th>姓名</th><th>生日</th>
-                <th>身分證</th><th>電話</th><th>建立時間</th><th style="width:90px;">操作</th>
+                <th>身分證</th><th>電話</th><th class="th-actions">操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -268,7 +97,7 @@
     </section>
 
     <!-- 明天名單 -->
-    <section id="tab-tomorrow" style="display:none;">
+    <section id="tab-tomorrow" class="is-hidden">
       <div class="card mb-3 p-3">
         <div class="d-flex align-items-center justify-content-between">
           <div>
@@ -294,7 +123,7 @@
             <thead>
               <tr>
                 <th>診別</th><th>時段</th><th>號碼</th><th>姓名</th><th>生日</th>
-                <th>身分證</th><th>電話</th><th>建立時間</th><th style="width:90px;">操作</th>
+                <th>身分證</th><th>電話</th><th class="th-actions">操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -305,7 +134,7 @@
     </section>
 
     <!-- 預約設定 -->
-    <section id="tab-settings" style="display:none;">
+    <section id="tab-settings" class="is-hidden">
       <div class="card mb-4 p-3">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="m-0 fw-bold">預約期限</h5>
@@ -316,7 +145,7 @@
         <div class="d-flex flex-wrap align-items-center gap-4">
           <div>
             <div class="small-note mb-1">起始天</div>
-            <div class="input-group" style="max-width:200px;">
+            <div class="input-group max-w-200">
               <button class="btn btn-ghost" id="btnStartMinus">－</button>
               <input id="winStart" inputmode="numeric" type="number" class="form-control text-center no-spinner" value="2">
               <button class="btn btn-ghost" id="btnStartPlus">＋</button>
@@ -324,7 +153,7 @@
           </div>
           <div>
             <div class="small-note mb-1">結束天</div>
-            <div class="input-group" style="max-width:200px;">
+            <div class="input-group max-w-200">
               <button class="btn btn-ghost" id="btnEndMinus">－</button>
               <input id="winEnd" inputmode="numeric" type="number" class="form-control text-center no-spinner" value="14">
               <button class="btn btn-ghost" id="btnEndPlus">＋</button>
@@ -359,10 +188,10 @@
         <div class="table-responsive">
           <table class="table align-middle" id="tblDaily">
             <colgroup>
-              <col style="width:120px;">
-              <col style="width:80px;"><col style="width:80px;"><col style="width:80px;">
-              <col style="width:200px;"><col style="width:200px;"><col style="width:200px;">
-              <col style="width:96px;"><col style="width:96px;"><col style="width:96px;">
+              <col class="col-w-120">
+              <col class="col-w-80"><col class="col-w-80"><col class="col-w-80">
+              <col class="col-w-200"><col class="col-w-200"><col class="col-w-200">
+              <col class="col-w-96"><col class="col-w-96"><col class="col-w-96">
             </colgroup>
             <thead>
               <tr>
@@ -378,7 +207,7 @@
         <div class="small-note">時間格式：08:30~11:30 ｜ 奇數：起始=1、間隔=2；偶數：起始=2、間隔=2；連號：起始=1、間隔=1。</div>
       </div>
 
-      <div class="card p-3" id="sheetsCard" style="display:none;">
+      <div class="card p-3 is-hidden" id="sheetsCard">
         <h5 class="mb-2 fw-bold">試算表捷徑</h5>
         <div id="sheetBtns" class="d-flex flex-wrap gap-2"></div>
         <div class="text-muted small mt-2">（需有該試算表權限；會在新分頁開啟）</div>
@@ -386,7 +215,7 @@
     </section>
 
     <!-- 臨時異動 -->
-    <section id="tab-special" style="display:none;">
+    <section id="tab-special" class="is-hidden">
       <div class="card mb-4 p-3">
         <h5 class="mb-3 fw-bold">新增臨時異動</h5>
         <input type="date" id="newDate" class="form-control mb-3">
@@ -394,7 +223,7 @@
         <!-- 停診開關 -->
         <div class="form-check form-switch mb-3">
           <input class="form-check-input" type="checkbox" id="neStop">
-          <label class="form-check-label" for="neStop" style="font-weight:800;color:#d32f2f">
+          <label class="form-check-label stop-label" for="neStop">
             是否停診（勾選後僅寫入停診旗標，其他上限/時段忽略）
           </label>
         </div>
@@ -449,13 +278,13 @@
         <div class="table-responsive">
           <table class="table align-middle" id="tbl">
             <colgroup>
-              <col style="width:110px;">
-              <col style="width:70px;">
-              <col style="width:80px;"><col style="width:80px;"><col style="width:80px;"><col style="width:80px;">
-              <col style="width:150px;"><col style="width:150px;"><col style="width:150px;"><col style="width:150px;">
-              <col style="width:90px;"><col style="width:90px;">
-              <col style="width:200px;">
-              <col style="width:220px;">
+              <col class="col-w-110">
+              <col class="col-w-70">
+              <col class="col-w-80"><col class="col-w-80"><col class="col-w-80"><col class="col-w-80">
+              <col class="col-w-150"><col class="col-w-150"><col class="col-w-150"><col class="col-w-150">
+              <col class="col-w-90"><col class="col-w-90">
+              <col class="col-w-200">
+              <col class="col-w-220">
             </colgroup>
             <thead>
               <tr>
@@ -475,7 +304,7 @@
     </section>
 
     <!-- 叫號控制 -->
-    <section id="tab-queue" style="display:none;">
+    <section id="tab-queue" class="is-hidden">
       <div class="card mb-3 p-3">
         <div class="d-flex align-items-center justify-content-between">
           <div>
@@ -660,6 +489,25 @@ function toRocDate(s){
   return `${y}/${m}/${da}`;
 }
 
+/* === 電話顯示補 0（只影響後台畫面，不改資料） === */
+function formatPhoneDisplay(phone) {
+  const raw = String(phone || '').trim();
+  const digits = raw.replace(/\D/g, '');
+
+  // Google Sheets 若把手機當數字，09 開頭會變成 9 碼；畫面顯示時補回 0。
+  if (/^9\d{8}$/.test(digits)) {
+    return '0' + digits;
+  }
+
+  // 已經是 09 開頭的手機號碼，維持原樣。
+  if (/^09\d{8}$/.test(digits)) {
+    return digits;
+  }
+
+  // 市話、分機、空白或其他格式不亂補。
+  return raw;
+}
+
 /* ===== 統計卡 + 表格渲染 ===== */
 function slotKey(label){
   const s=String(label||'').trim();
@@ -718,8 +566,7 @@ function renderItems(tableId, items, refreshFnName){
       <td>${x.name||''}</td>
       <td>${toRocDate(x.birthday||'')}</td>
       <td>${x.pid||''}</td>
-      <td>${x.phone||''}</td>
-      <td>${x.createdAt||''}</td>
+      <td>${formatPhoneDisplay(x.phone)}</td>
       <td><button class="btn btn-danger btn-sm" onclick="cancelRow(${x.id}, '${refreshFnName}')">取消</button></td>`;
     tb.appendChild(tr);
   });
@@ -940,7 +787,7 @@ async function loadSpecials(){
     const stop = (x["是否停診"]===true || String(x["是否停診"]).toUpperCase()==='TRUE');
     tr.innerHTML=`
       <td>${x.日期}</td>
-      <td>${ stop ? '<span class="badge" style="background:#d32f2f">停診</span>' : '<span class="badge bg-secondary">—</span>' }</td>
+      <td>${ stop ? '<span class="badge stop-badge">停診</span>' : '<span class="badge bg-secondary">—</span>' }</td>
       <td>${x.早診上限||0}</td><td>${x.午診上限||0}</td><td>${x.晚診上限||0}</td><td>${x.約診上限||0}</td>
       <td>${x.早診時段||''}</td><td>${x.午診時段||''}</td><td>${x.晚診時段||''}</td><td>${x.約診時段||''}</td>
       <td>${x.起始號碼||1}</td><td>${x.間隔位數||1}</td>
@@ -965,7 +812,7 @@ async function editRow(id){
    <div class="modal-body">
      <div class="form-check form-switch mb-3">
        <input class="form-check-input" type="checkbox" id="edStop" ${ (f["是否停診"]===true || String(f["是否停診"]).toUpperCase()==='TRUE') ? 'checked' : '' }>
-       <label class="form-check-label" for="edStop" style="font-weight:800;color:#d32f2f">是否停診</label>
+       <label class="form-check-label stop-label" for="edStop">是否停診</label>
      </div>
 
      <div class="row g-2">
