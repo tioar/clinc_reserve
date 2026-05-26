@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>預約成功</title>
+
+<!-- 與 index 相同的字體設定 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="icon" type="image/png" href="favicon.png">
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+
+<script>
+/* === 後端 API（與 index / query 一致） === */
+const API = "https://script.google.com/macros/s/AKfycbwexa8A6Qf8nTJFg9kPZA_k1K8uK0cD_cXg-UYFOcKESuets_H6wLKZJwGH5GTqjF19/exec";
+
+/* === AES（遮蔽） === */
+const AES_KEY = "A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
+function aesDec(v){
+  const txt = CryptoJS.AES.decrypt(decodeURIComponent(v), AES_KEY).toString(CryptoJS.enc.Utf8);
+  if(!txt) throw new Error("DECRYPT_FAIL");
+  const data = JSON.parse(txt);
+  if(data.exp && Date.now() > data.exp) throw new Error("TOKEN_EXPIRED");
+  return data;
+}
+
+/* 小工具 */
+const qs = (k)=>new URL(location.href).searchParams.get(k);
+const pad2=(n)=>String(n).padStart(2,'0');
+function weekdayZh(ymd){ const d=new Date(ymd+'T09:00:00+08:00'); return ['日','一','二','三','四','五','六'][d.getDay()]||''; }
+function fmtTsTW(input){ if(!input) return ''; const d=new Date(input); if(isNaN(d)) return ''; return `${d.getFullYear()}/${pad2(d.getMonth()+1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
+function toYMD(d){ const z=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),1,0,0)); return `${z.getUTCFullYear()}-${pad2(z.getUTCMonth()+1)}-${pad2(z.getUTCDate())}`; }
+function normalizeYMD(input){
+  if(!input) return '';
+  if(typeof input==='string'){ if(/^\d{4}-\d{2}-\d{2}$/.test(input)) return input; const d=new Date(input); return isNaN(d)?'':toYMD(d); }
+  const d=new Date(input); return isNaN(d)?'':toYMD(d);
+}
+
+/* 診別 → 卡片 class */
+function slotClass(slot){
+  if(!slot) return 'slot-plain';
+  if(slot.includes('早')) return 'slot-early';
+  if(slot.includes('午')) return 'slot-noon';
+  if(slot.includes('晚')) return 'slot-night';
+  if(slot.includes('約')) return 'slot-appt';
+  return 'slot-plain';
+}
+
+/* 依診別顯示報到時間 */
+function slotCheckinText(slot, meta) {
+  if (!slot) return "";
+  if (slot.includes("約")) {
+    if (meta && meta.checkinBy) return `約診請在 ${meta.checkinBy} 前報到`;
+    return "最晚報到時間為門診結束前一小時";
+  }
+  if (slot.includes("早")) return "早診請在 10:30 前報到";
+  if (slot.includes("午")) return "午診請在 16:00 前報到";
+  if (slot.includes("晚")) return "晚診請在 20:00 前報到";
+  return "";
+}
+</script>
+
+<style>
+  :root{
+    --purple:#643da8;
+    --purple-600:#4d2f82;
+    --lavender:#f6f2fc;
+    --lavender-200:#ede9fe;
+    --text-deep:#2a2341;
+    --text-muted:#7a6ea3;
+
+    --early-bg:#e7f7ee; --early-bd:#6bd3a0; --early-tx:#0f5132;
+    --noon-bg:#fff3df;  --noon-bd:#ffc772; --noon-tx:#7a4d00;
+    --night-bg:#e8f2ff; --night-bd:#88b4ff; --night-tx:#1d4ed8;
+    --appt-bg:#fde7ef;  --appt-bd:#e288c2; --appt-tx:#b51695;
+  }
+
+  body{
+    background:var(--lavender);
+    font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    color:var(--text-deep);
+  }
+  .wrap{ max-width:min(880px,94vw); margin:52px auto; padding:0 16px; }
+  .cardx{
+    background:#fff; border-radius:24px;
+    padding:36px clamp(24px,4vw,44px);
+    box-shadow:0 12px 28px rgba(100,61,168,.14);
+    border:1px solid #ebe6fb;
+  }
+
+  .title-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
+  .title-row .check{ font-size:44px; line-height:1; }
+  .title-row .txt{ font-weight:900; font-size:36px; color:var(--text-deep); }
+  .muted{ color:var(--text-muted); }
+
+  .btn-main{
+    background:var(--purple); color:#fff; border:none; border-radius:14px;
+    padding:.9rem 1.25rem; font-weight:800;
+  }
+  .btn-main:hover{ background:var(--purple-600); color:#fff; }
+  .btn-ghost{
+    background:var(--lavender-200); color:var(--purple-600);
+    border:1px solid #e3ddff; border-radius:14px;
+    padding:.9rem 1.25rem; font-weight:800;
+  }
+  .btn-ghost:hover{ background:#e3ddff; color:#3c256a; }
+
+  /* 讀取遮罩：轉圈圈 + 文字 */
+  #loading{
+    position:fixed; inset:0; background:rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:12px;
+    z-index:9999; font-size:18px; color:var(--purple-600);
+    backdrop-filter: blur(2px);
+  }
+  #loading .spinner-border{ width:2.25rem; height:2.25rem; }
+  #loading .loading-text{ font-weight:800; }
+
+  .slot-card{
+    border-radius:20px;
+    padding:18px 18px;
+    border:2px dashed;
+    display:block;
+    margin:0 auto 18px;
+    max-width:720px;
+    text-align:center;
+    font-weight:800;
+    line-height:1.7;
+    white-space:nowrap;
+  }
+  @media (max-width:768px){ .slot-card{ white-space:normal; } }
+
+  .slot-early{ background:var(--early-bg); border-color:var(--early-bd); color:var(--early-tx); }
+  .slot-noon { background:var(--noon-bg);  border-color:var(--noon-bd);  color:var(--noon-tx); }
+  .slot-night{ background:var(--night-bg); border-color:var(--night-bd); color:var(--night-tx); }
+  .slot-appt{  background:var(--appt-bg);  border-color:var(--appt-bd);  color:var(--appt-tx); }
+  .slot-plain{ background:#f7f7fb; border-color:#d7d9e3; color:#3a3f47; }
+
+  .slot-main{ font-size:1.1rem; }
+  .slot-sub { font-size:1.05rem; }
+  .slot-note{ font-size:.95rem; margin-top:2px; }
+  .notice-text{ font-size:.95rem; line-height:1.6; color:#5e5485; }
+  @media (max-width:400px){ .notice-text{ font-size:.88rem; } }
+
+  #shareBtn{
+    background:none; border:none;
+    color:var(--purple-600);
+    font-weight:700; text-decoration:underline;
+    padding:0; cursor:pointer;
+  }
+  #shareBtn:hover{ color:var(--purple); }
+</style>
+</head>
+<body>
+<!-- 改成轉圈圈 + 讀取中 -->
+<div id="loading">
+  <div class="spinner-border" role="status" aria-hidden="true"></div>
+  <div class="loading-text">讀取中請稍等</div>
+</div>
+
+<div class="wrap">
+  <div class="cardx text-center">
+    <div class="title-row">
+      <div class="check"> ✔️ </div>
+      <div class="txt"> 預 約 成 功 </div>
+    </div>
+    <div class="muted mb-3">您的預約資訊：</div>
+
+    <div id="slotCard" class="slot-card slot-plain">
+      <div id="slotMain" class="slot-main"></div>
+      <div id="slotSub"  class="slot-sub"></div>
+      <div id="slotNotice" class="slot-note"></div>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-start gap-2 mb-4 notice-text">
+      <div style="font-size:20px;line-height:1.1;">🔸</div>
+      <div>最晚報到時間為門診時間結束前一小時，超過時間自動取消釋出給現場掛號。門診當天僅接受電話取消 ☎ (03)5152971。 </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-2 mb-3">
+      <a class="btn btn-main flex-fill" href="index.html">返回預約首頁</a>
+      <a class="btn btn-ghost flex-fill" href="query.html">查詢/取消預約</a>
+    </div>
+
+    <div class="text-center mb-2">
+      <button id="shareBtn">📤 分享</button>
+    </div>
+
+    <div id="filledAt" class="muted small"></div>
+  </div>
+</div>
+
+<script>
+const $loading  = document.getElementById('loading');
+const slotCard  = document.getElementById('slotCard');
+const slotMain  = document.getElementById('slotMain');
+const slotSub   = document.getElementById('slotSub');
+const slotNotice= document.getElementById('slotNotice');
+const filledAt  = document.getElementById('filledAt');
+const shareBtn  = document.getElementById('shareBtn');
+
+(async function init(){
+  try{
+    // 1) 先拿 id / receipt（從 cipher 或 sessionStorage）
+    let id=null, receipt='';
+    const paramCipher = qs('cipher');
+    if(paramCipher){
+      try{
+        const obj = aesDec(paramCipher);
+        id = obj.id || obj.bookingId || null;
+        receipt = obj.receipt || obj.rcpt || '';
+        try{ sessionStorage.setItem('lastBookingId', String(id||'')); }catch(_){}
+        try{ if(receipt) sessionStorage.setItem('rcpt:'+String(id||''), String(receipt)); }catch(_){}
+      }catch(_){}
+      history.replaceState({}, "", location.pathname);
+    }
+    if(!id) id = sessionStorage.getItem('lastBookingId') || null;
+    if(!receipt && id) receipt = sessionStorage.getItem('rcpt:'+id) || '';
+
+    if(!id){
+      alert('連結無效或已過期，請回首頁重新操作。');
+      location.href='index.html'; return;
+    }
+
+    // 2) 用 id/receipt 叫 API 取詳細資料
+    const r = await axios.get(API, { params:{ action:'detail', id, receipt } });
+    const d = r.data || {};
+    if (d.error) { alert('無法取得預約資料，請回首頁。'); location.href='index.html'; return; }
+
+    const ymd = normalizeYMD(d.date);
+    const wk  = weekdayZh(ymd);
+
+    // 3) 盡量補上實際時段 / 醫師
+    let timeRange = '';
+    let doctor = (d.doctor || '').trim();
+    let slotMeta = null;
+    try{
+      const slotsResp = await axios.get(API, { params:{ action:'getSlots', date: ymd } });
+      const data = slotsResp.data;
+      const slots = Array.isArray(data) ? data : (Array.isArray(data?.slots) ? data.slots : []);
+      const hit = slots.find(x => String(x.label) === String(d.slot));
+      slotMeta  = hit || null;
+      timeRange = hit?.time || '';
+      if(!doctor && hit && hit.doctor) doctor = String(hit.doctor);
+    }catch(_){}
+
+    // 4) 套診別色卡 + 寫字
+    slotCard.className = 'slot-card ' + slotClass(d.slot||'');
+    const docTxt = doctor ? `【${doctor}】` : '';
+    slotMain.textContent = `${ymd} 星期${wk}（${d.slot||''}） ${timeRange||''} ${docTxt}`;
+    slotSub.textContent  = `姓名：${d.name||''}，號碼：${d.num||''} 號。`;
+    const noticeText = slotCheckinText(d.slot || "", slotMeta);
+    slotNotice.innerHTML = noticeText ? `⭐ ${noticeText}` : "";
+
+    filledAt.textContent = d.submittedAt ? fmtTsTW(d.submittedAt) : '';
+
+    // 5) 分享
+    const shareText =
+`✔️陳萬龍診所門診預約成功！
+
+${ymd} 星期${wk}（${d.slot||''}） ${timeRange||''} ${docTxt}
+姓名：${d.name||''}，號碼：${d.num||''} 號。
+
+🔺請留意最晚報到時間為門診結束前一小時。`;
+    shareBtn.onclick = async ()=>{
+      try{
+        if(navigator.share) await navigator.share({ text: shareText });
+        else{ await navigator.clipboard.writeText(shareText); alert('已複製分享內容！'); }
+      }catch(_){}
+    };
+
+  }catch(e){
+    console.error(e);
+    alert('系統忙碌或網路不穩，請回首頁再試一次。');
+    location.href='index.html';
+  }finally{
+    // 關閉轉圈圈遮罩
+    $loading.style.display='none';
+  }
+})();
+</script>
+</body>
+</html>
+
