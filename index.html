@@ -1,6 +1,6 @@
   <!doctype html>
 <html lang="zh-Hant">
-<head> 
+<head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>陳萬龍診所門診線上預約</title>
@@ -27,12 +27,12 @@
     <div class="cal-head">
       <div class="cal-title">
         <span class="title-text" id="calTitle">—</span>
-        <span class="cal-range-note">未顯示之日期代表尚未開放；無診別的日期代表當日無門診</span>
+        <span id="nowTime" class="nowtime"></span>
       </div>
     </div>
 
     <div class="rule-bar">
-      <span id="nowTime" class="nowtime"></span>
+      <span class="cal-range-note">未顯示之日期代表尚未開放；無診別的日期代表當日無門診</span>
       <button class="rule-btn" id="openRules">開放預約日期規則</button>
     </div>
 
@@ -311,7 +311,7 @@ let WINDOW_MIN=null,WINDOW_MAX=null;
 function fmtNowLabel(){
   const d=new Date();
   const w='日一二三四五六'[d.getDay()];
-  return `今天是 ${pad2(d.getMonth()+1)}/${pad2(d.getDate())}（${w}）`;
+  return `今天是 ${d.getMonth()+1}/${d.getDate()}（${w}）`;
 }
 (function bootNowTime(){
   const el=document.getElementById('nowTime');
@@ -378,7 +378,7 @@ function renderRollingHeader(){
     $title.textContent='目前可預約區間載入失敗';
     return;
   }
-  $title.textContent=`目前可預約： ${fmtRangeDate(WINDOW_MIN)}～ ${fmtRangeDate(WINDOW_MAX)}`;
+  $title.innerHTML=`開放預約﹔<br>${fmtRangeDate(WINDOW_MIN)}～${fmtRangeDate(WINDOW_MAX)}`;
 }
 
 /* 逐日 slots（只抓後端回傳的開放區間） */
