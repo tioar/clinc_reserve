@@ -32,7 +32,7 @@
     </div>
 
     <div class="rule-bar">
-      <span class="cal-range-note">未顯示之日期代表尚未開放；無診別的日期代表當日無門診</span>
+      <span class="cal-range-note">（未顯示之日期代表沒有開放；無診別的日期代表當日沒有門診。）</span>
       <button class="rule-btn" id="openRules">開放預約日期規則</button>
     </div>
 
@@ -378,7 +378,7 @@ function renderRollingHeader(){
     $title.textContent='目前可預約區間載入失敗';
     return;
   }
-  $title.innerHTML=`開放預約﹔<br>${fmtRangeDate(WINDOW_MIN)}～${fmtRangeDate(WINDOW_MAX)}`;
+  $title.innerHTML=`目前開放預約日期：<br>${fmtRangeDate(WINDOW_MIN)}～${fmtRangeDate(WINDOW_MAX)}`;
 }
 
 /* 逐日 slots（只抓後端回傳的開放區間） */
