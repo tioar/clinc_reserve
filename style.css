@@ -1463,3 +1463,78 @@ a.share-btn:focus{
   outline:none !important;
   box-shadow:none !important;
 }
+
+/* =========================================================
+   Final font override: 全站統一黑體
+   目的：取消所有楷體/標題楷體設定，全部頁面、全部元件皆使用黑體。
+   ========================================================= */
+:root{
+  --font-ui:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC",Arial,sans-serif;
+  --font-title:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC",Arial,sans-serif;
+}
+
+html,
+body,
+body *,
+button,
+input,
+select,
+textarea,
+label,
+table,
+th,
+td,
+.btn,
+.form-control,
+.form-select,
+.page-title,
+.brand-title,
+.page-head h1,
+.app-title,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.headbar h1,
+.login-card h1,
+.card-head h3,
+.title-row .h1x,
+.h1x,
+.modal-title,
+.modal-title.brand-title,
+.cal-title,
+.cal-title .title-text,
+.nowtime,
+.day,
+.tile,
+.pill,
+.chip,
+.badge,
+.cap,
+.cap-pill,
+.qlabel,
+.small-note,
+.slot-main,
+.slot-sub,
+.slot-note{
+  font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC",Arial,sans-serif !important;
+}
+
+/* 標題保留原本粗細與間距，但字體改黑體 */
+.page-title,
+.brand-title,
+.page-head h1,
+.app-title,
+h1.page-title,
+.headbar h1,
+.login-card h1,
+.card-head h3,
+.title-row .h1x,
+.h1x,
+.modal-title,
+.modal-title.brand-title{
+  font-weight:700;
+  letter-spacing:.04em;
+}
