@@ -27,12 +27,12 @@
     <div class="cal-head">
       <div class="cal-title">
         <span class="title-text" id="calTitle">—</span>
-        <span id="nowTime" class="nowtime"></span>
       </div>
     </div>
 
     <div class="rule-bar">
-      <span class="cal-range-note">（未顯示之日期代表沒有開放；無診別的日期代表當日沒有門診。）</span>
+      <span class="cal-range-note">（未顯示之日期代表尚未開放；無診別的日期代表當日無門診。）</span>
+      <span id="nowTime" class="nowtime"></span>
       <button class="rule-btn" id="openRules">開放預約日期規則</button>
     </div>
 
@@ -434,6 +434,31 @@ function visibleSlots(slots){
     .filter(({slot})=>slot.status!=='closed' && Number(slot.cap)>0);
 }
 
+function chooseDefaultSlot(slots){
+  const openSlots=(slots||[]).filter(s=>
+    s &&
+    s.status==='open' &&
+    Number(s.cap)>0
+  );
+
+  if(!openSlots.length) return null;
+  if(openSlots.length===1) return openSlots[0];
+
+  const appt=openSlots.find(s=>s.slot==='appt' || String(s.label||'').includes('約'));
+  if(appt) return appt;
+
+  const early=openSlots.find(s=>s.slot==='early' || String(s.label||'').includes('早'));
+  if(early) return early;
+
+  const noon=openSlots.find(s=>s.slot==='noon' || String(s.label||'').includes('午'));
+  if(noon) return noon;
+
+  const night=openSlots.find(s=>s.slot==='night' || String(s.label||'').includes('晚'));
+  if(night) return night;
+
+  return openSlots[0];
+}
+
 function hydrateRollingCalendar(dayMap){
   if(!WINDOW_MIN || !WINDOW_MAX){
     $days.innerHTML='';
@@ -478,7 +503,12 @@ function hydrateRollingCalendar(dayMap){
       $('slot').value='';
       day.classList.add('selected');
       const meta=dayMap[day.dataset.ymd]||{};
-      openDay(day.dataset.ymd, meta);
+      const defaultSlot=chooseDefaultSlot((meta.slots||[]));
+      openDay(day.dataset.ymd, meta, defaultSlot);
+      if(defaultSlot){
+        $('date').value=day.dataset.ymd;
+        $('slot').value=slotLabel(defaultSlot);
+      }
       $panel.scrollIntoView({behavior:'smooth',block:'start'});
     });
   });
