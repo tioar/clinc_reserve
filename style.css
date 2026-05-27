@@ -1538,3 +1538,24 @@ h1.page-title,
   font-weight:700;
   letter-spacing:.04em;
 }
+
+/* admin.html only: keep the name column readable on narrow screens */
+.admin-page #tblToday th:nth-child(4),
+.admin-page #tblToday td:nth-child(4),
+.admin-page #tblTomorrow th:nth-child(4),
+.admin-page #tblTomorrow td:nth-child(4){
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+  min-width:5.5em;
+}
+
+.admin-page #tblToday,
+.admin-page #tblTomorrow{
+  min-width:760px;
+}
+
+.admin-page .table-responsive{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
