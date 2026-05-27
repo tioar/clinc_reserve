@@ -1574,3 +1574,92 @@ h1.page-title,
   overflow-x:auto;
   -webkit-overflow-scrolling:touch;
 }
+
+/* admin.html only: queue control layout */
+.admin-page #tab-queue .row.g-3 > .col-12.col-md-6{
+  width:100%;
+  flex:0 0 100%;
+  max-width:100%;
+}
+
+.admin-page .q-now-row{
+  display:grid !important;
+  grid-template-columns:72px minmax(240px,1fr) 72px 160px;
+  gap:14px;
+  align-items:stretch;
+  width:100%;
+  flex-wrap:nowrap !important;
+  justify-content:normal !important;
+}
+
+.admin-page .q-step{
+  width:72px !important;
+  height:72px !important;
+  min-width:72px !important;
+  font-size:34px !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.admin-page .q-now-input{
+  width:100% !important;
+  min-width:240px !important;
+  height:72px !important;
+  font-size:clamp(42px,6vw,64px) !important;
+  line-height:1 !important;
+  padding:0 20px !important;
+  text-align:center !important;
+  overflow:visible !important;
+  box-sizing:border-box !important;
+}
+
+.admin-page .q-actions{
+  display:grid !important;
+  grid-template-columns:1fr;
+  grid-template-rows:1fr 1fr;
+  gap:10px;
+  margin-left:0 !important;
+  width:160px;
+  align-self:stretch;
+}
+
+.admin-page .q-actions .btn,
+.admin-page #qReset,
+.admin-page #qSet{
+  width:100% !important;
+  min-width:0 !important;
+  height:100% !important;
+  min-height:0 !important;
+  padding:.55rem .8rem !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+@media (max-width:720px){
+  .admin-page .q-now-row{
+    grid-template-columns:56px minmax(140px,1fr) 56px;
+  }
+
+  .admin-page .q-actions{
+    grid-column:1 / -1;
+    width:100%;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:auto;
+  }
+
+  .admin-page .q-step{
+    width:56px !important;
+    height:56px !important;
+    min-width:56px !important;
+    font-size:28px !important;
+  }
+
+  .admin-page .q-now-input{
+    min-width:140px !important;
+    height:56px !important;
+    font-size:clamp(34px,10vw,48px) !important;
+    padding:0 12px !important;
+  }
+}
