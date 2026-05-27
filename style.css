@@ -1540,14 +1540,22 @@ h1.page-title,
 }
 
 /* admin.html only: keep the name column readable on narrow screens */
-.admin-page #tblToday th:nth-child(4),
-.admin-page #tblToday td:nth-child(4),
-.admin-page #tblTomorrow th:nth-child(4),
-.admin-page #tblTomorrow td:nth-child(4){
+.admin-page #tblToday th:nth-child(3),
+.admin-page #tblToday td:nth-child(3),
+.admin-page #tblTomorrow th:nth-child(3),
+.admin-page #tblTomorrow td:nth-child(3){
   white-space:nowrap !important;
   word-break:keep-all !important;
   overflow-wrap:normal !important;
   min-width:5.5em;
+}
+
+.admin-page #tblToday th:nth-child(2),
+.admin-page #tblToday td:nth-child(2),
+.admin-page #tblTomorrow th:nth-child(2),
+.admin-page #tblTomorrow td:nth-child(2),
+.admin-page .booking-number{
+  font-weight:900 !important;
 }
 
 .admin-page #tblToday,
