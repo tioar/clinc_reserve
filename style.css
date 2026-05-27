@@ -1558,6 +1558,13 @@ h1.page-title,
   font-weight:900 !important;
 }
 
+.admin-page #tblToday th:nth-child(7),
+.admin-page #tblToday td:nth-child(7),
+.admin-page #tblTomorrow th:nth-child(7),
+.admin-page #tblTomorrow td:nth-child(7){
+  font-weight:400 !important;
+}
+
 .admin-page #tblToday,
 .admin-page #tblTomorrow{
   min-width:760px;
