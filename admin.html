@@ -85,8 +85,8 @@
           <table class="table align-middle" id="tblToday">
             <thead>
               <tr>
-                <th>診別</th><th>時段</th><th>號碼</th><th>姓名</th><th>生日</th>
-                <th>身分證</th><th>電話</th><th class="th-actions">操作</th>
+                <th>診別</th><th>號碼</th><th>姓名</th><th>生日</th>
+                <th>身分證</th><th>電話</th><th>時段</th><th class="th-actions">操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -122,8 +122,8 @@
           <table class="table align-middle" id="tblTomorrow">
             <thead>
               <tr>
-                <th>診別</th><th>時段</th><th>號碼</th><th>姓名</th><th>生日</th>
-                <th>身分證</th><th>電話</th><th class="th-actions">操作</th>
+                <th>診別</th><th>號碼</th><th>姓名</th><th>生日</th>
+                <th>身分證</th><th>電話</th><th>時段</th><th class="th-actions">操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -561,12 +561,12 @@ function renderItems(tableId, items, refreshFnName){
     tr.className=`slot-${key}-${shade}`;
     tr.innerHTML=`
       <td>${x.slot||''}</td>
-      <td>${x.time||''}</td>
-      <td>${x.num||''}</td>
+      <td class="booking-number">${x.num||''}</td>
       <td>${x.name||''}</td>
       <td>${toRocDate(x.birthday||'')}</td>
       <td>${x.pid||''}</td>
       <td>${formatPhoneDisplay(x.phone)}</td>
+      <td>${x.time||''}</td>
       <td><button class="btn btn-danger btn-sm" onclick="cancelRow(${x.id}, '${refreshFnName}')">取消</button></td>`;
     tb.appendChild(tr);
   });
