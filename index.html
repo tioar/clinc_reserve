@@ -12,6 +12,97 @@
 
 <!-- 近似楷體的開源備援 -->
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* index calendar layout only */
+.rule-bar{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+}
+.cal-range-note,
+.nowtime{
+  display:block;
+}
+.pill,
+.slot-choice{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  line-height:1 !important;
+  min-height:34px;
+  padding:0 .45rem !important;
+}
+.pill .lbl,
+.slot-choice .lbl{
+  display:block;
+  line-height:1 !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#days .day{
+  box-sizing:border-box;
+  overflow:visible;
+}
+#days .day .d{
+  white-space:nowrap;
+  line-height:1.2;
+  margin-bottom:8px;
+}
+@media (max-width:600px){
+  .wrap{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .cardish{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .grid{
+    gap:6px;
+    padding-left:6px;
+    padding-right:6px;
+  }
+  #days .day{
+    min-height:92px;
+    padding:8px 6px;
+    border-radius:12px !important;
+    overflow:visible;
+  }
+  #days .day.selected,
+  #days .day.is-selected{
+    border-width:3px !important;
+    padding:6px 4px;
+  }
+  #days .day .d{
+    font-size:1rem;
+    font-weight:700;
+    white-space:nowrap;
+    line-height:1.2;
+    margin-bottom:8px;
+  }
+  #days .day .meta{
+    gap:6px;
+  }
+  #days .pill,
+  #days .slot-choice{
+    min-height:34px;
+    height:34px;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    line-height:1 !important;
+    padding:0 .25rem !important;
+  }
+  #days .pill .lbl,
+  #days .slot-choice .lbl{
+    line-height:1 !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+}
+</style>
 </head>
 <body>
 <!-- 全頁遮罩 -->
