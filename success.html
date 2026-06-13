@@ -53,7 +53,7 @@
 
 <script>
 /* ===== 常數（正式模式會用到） ===== */
-const API = "https://script.google.com/macros/s/AKfycbyrityeHlUpxL1bgpSXzrhN_jQLgjCEBEJantfKgCEtovOCGH0EVMCm6gwiIsvt7n2Y/exec";
+const API = "https://script.google.com/macros/s/AKfycbwGixHlKlD84QdlozE72BPcch2FdKf8wjHeS60qiNNTpBZJDiqujYV2gV2Scnp-gU1C/exec";
 const AES_KEY = "A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
 
 function getClientId(){
@@ -112,6 +112,15 @@ function aesDec(v){
   if(data.exp && Date.now() > data.exp) throw new Error("TOKEN_EXPIRED");
   return data;
 }
+function readLastReservation(){
+  try{
+    const raw = sessionStorage.getItem('lastReservation');
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    if(!d || !d.date || !d.slot) return null;
+    return d;
+  }catch(_){ return null; }
+}
 
 /* ===== DOM ===== */
 const $loading  = document.getElementById('loading');
@@ -157,6 +166,7 @@ const shareBtn  = document.getElementById('shareBtn');
     }else{
       // 正式：由 cipher / sessionStorage 拿 id，再向 API 取資料
       let id=null, receipt='';
+      const cachedReservation = readLastReservation();
       const cipher = qs('cipher');
       if(cipher){
         try{
@@ -168,6 +178,8 @@ const shareBtn  = document.getElementById('shareBtn');
       }
       if(!id) id = sessionStorage.getItem('lastBookingId') || null;
       if(!receipt && id) receipt = sessionStorage.getItem('rcpt:'+id) || '';
+      if(!id && cachedReservation?.id) id = cachedReservation.id;
+      if(!receipt && cachedReservation?.receipt) receipt = cachedReservation.receipt;
 
       if(!id){
         if(stay){
@@ -179,18 +191,29 @@ const shareBtn  = document.getElementById('shareBtn');
         }
       }
 
-      const r = await axios.get(API, { params:{ action:'detail', id, receipt } });
-      const d = r.data || {};
-      if(d.error){ throw new Error('DETAIL_FAIL'); }
+      const canUseCache = cachedReservation && String(cachedReservation.id||id) === String(id);
+      if(canUseCache){
+        ymd    = ymdNorm(cachedReservation.date);
+        slot   = cachedReservation.slot || '';
+        time   = cachedReservation.time || '';
+        doctor = cachedReservation.doctor || '';
+        name   = cachedReservation.name || '';
+        num    = cachedReservation.num || '';
+        submittedAt = cachedReservation.submittedAt || '';
+      }else{
+        const r = await axios.get(API, { params:{ action:'detail', id, receipt } });
+        const d = r.data || {};
+        if(d.error){ throw new Error('DETAIL_FAIL'); }
 
-      ymd    = ymdNorm(d.date);
-      slot   = d.slot || '';
-      time   = d.time || '';
-      doctor = d.doctor || '';
-      name   = d.name || '';
-      num    = d.num || '';
-      submittedAt = d.submittedAt || '';
-      if(!time){
+        ymd    = ymdNorm(d.date);
+        slot   = d.slot || '';
+        time   = d.time || '';
+        doctor = d.doctor || '';
+        name   = d.name || '';
+        num    = d.num || '';
+        submittedAt = d.submittedAt || '';
+      }
+      if(!time && !canUseCache){
         try{
           const s2 = await axios.get(API, { params:{ action:'getSlots', date: ymd } });
           const arr = Array.isArray(s2.data) ? s2.data : (Array.isArray(s2.data?.slots) ? s2.data.slots : []);
