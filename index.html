@@ -241,7 +241,7 @@
 
 <script>
 /* ====== 基本設定 ====== */
-const API="https://script.google.com/macros/s/AKfycbwGixHlKlD84QdlozE72BPcch2FdKf8wjHeS60qiNNTpBZJDiqujYV2gV2Scnp-gU1C/exec";
+const API="https://script.google.com/macros/s/AKfycbyAgyDVOpuIvKvqKaxv_pM3sfd_XCUQnVRvfx7KUU5WSZVS08GHujfS52BCacbiAd4/exec";
 const RECAPTCHA_SITE_KEY="6LdqprArAAAAACpuAXemZUH3KNER1t1iw07YjGHu";
 const AES_KEY="A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
 const API_TIMEOUT=15000;
@@ -852,16 +852,39 @@ $('showNotice').addEventListener('click',e=>{
 $('agreeConfirm').addEventListener('click',()=>{ $('agree').checked=true; if(noticeModalInst) noticeModalInst.hide(); });
 
 /* 啟動週曆 */
+async function loadCalendarData(){
+  try{
+    const r=await axios.get(API,{params:withClient({action:'getCalendar',t:Date.now()}),timeout:API_TIMEOUT});
+    const data=r.data||{};
+    if(!data.ok || !data.startDate || !data.endDate || !Array.isArray(data.days)) throw new Error('bad_calendar');
+    const min=parseYmd(data.startDate);
+    const max=parseYmd(data.endDate);
+    WINDOW_MIN=new Date(min.getFullYear(),min.getMonth(),min.getDate());
+    WINDOW_MAX=new Date(max.getFullYear(),max.getMonth(),max.getDate());
+    if(isNaN(WINDOW_MIN.getTime()) || isNaN(WINDOW_MAX.getTime()) || WINDOW_MIN>WINDOW_MAX) throw new Error('bad_window');
+    renderRollingHeader();
+    const map={};
+    data.days.forEach(d=>{
+      const key=String(d.date||'').trim();
+      if(key) map[key]=normalizeDayMeta(d,key);
+    });
+    hydrateRollingCalendar(map);
+    return true;
+  }catch(err){
+    console.warn('getCalendar fallback', err);
+    await getWindow();
+    renderRollingHeader();
+    if(!WINDOW_MIN || !WINDOW_MAX) throw new Error('missing_window');
+    const map=await fetchRangeDays(WINDOW_MIN, WINDOW_MAX);
+    hydrateRollingCalendar(map);
+    return true;
+  }
+}
+
 async function bootRollingCalendar(){
   toggleSkeleton(true);
   try{
-    renderRollingHeader();
-    if(!WINDOW_MIN || !WINDOW_MAX){
-      showCalendarError('目前預約資料載入失敗，請稍後再試');
-      return;
-    }
-    const map=await fetchRangeDays(WINDOW_MIN, WINDOW_MAX);
-    hydrateRollingCalendar(map);
+    await loadCalendarData();
   }catch(err){
     console.error('calendar init failed', err);
     showCalendarError('目前預約資料載入失敗，請稍後再試');
@@ -872,8 +895,6 @@ async function bootRollingCalendar(){
 
 (async function init(){
   try{
-    try{await loadRecaptcha();}catch(_){}
-    await getWindow();
     $('whead').innerHTML=['日','一','二','三','四','五','六'].map(w=>`<div class="wday">${w}</div>`).join('');
     await bootRollingCalendar();
   }catch(err){
