@@ -373,7 +373,7 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 /* ===== API 與共用 ===== */
-const API = "https://script.google.com/macros/s/AKfycbzcepushvWBq68DVxUfSLQz640G-p23-zVDfpab5y7cvJ9KV5INARTpEQmgZDFtjDY/exec";
+const API = "https://script.google.com/macros/s/AKfycbyAgyDVOpuIvKvqKaxv_pM3sfd_XCUQnVRvfx7KUU5WSZVS08GHujfS52BCacbiAd4/exec";
 let ADMIN_TOKEN = sessionStorage.getItem('ADMIN_TOKEN')||"";
 
 function getClientId(){
@@ -389,7 +389,7 @@ function getUA(){ return navigator.userAgent || ''; }
 function withClient(params){ return Object.assign({ clientId:getClientId(), ua:getUA() }, params||{}); }
 
 // 第二支 GAS（叫號控制）
-const QUEUE_API = "https://script.google.com/macros/s/AKfycbwGixHlKlD84QdlozE72BPcch2FdKf8wjHeS60qiNNTpBZJDiqujYV2gV2Scnp-gU1C/exec";
+const QUEUE_API = "https://script.google.com/macros/s/AKfycbzdtqy4EU7MVDWqPGzNEGoP06PzAvsCRuRgh08YBui1mkFlGfiFcZu5vFpW7JNIkBrO/exec";
 const QUEUE_KEY = ""; // 若你的叫號 GAS 有 Admin Key，就填在這裡
 
 /* ========= Token 自動續期 ========= */
