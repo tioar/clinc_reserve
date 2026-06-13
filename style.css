@@ -119,7 +119,8 @@ body{
 .pill.night{background:#e7f0fb;color:#1646a2;border-color:#c8dcff}
 .pill.appt {background:#f9e7ee;color:#9b1f79;border-color:#f6b6dc}
 .pill.other{background:#f7f7f8;color:#3f4652;border-color:#d7dde6}
-.pill.stop{background:#f5e6e5;color:#b91c1c;border-color:#efc7c4}
+.pill.rest{background:#f5e6e5;color:#b91c1c;border-color:#efc7c4}
+.pill.stop{background:#e5e7eb;color:#1f2937;border-color:#9ca3af}
 .pill.full{background:#eef1f5;color:#6b7280;border-color:#e5e7eb}
 .slot-choice{width:100%;min-width:auto;cursor:pointer;font-family:inherit}
 .slot-choice:hover{outline:2px solid #d4e2fa}
@@ -151,6 +152,8 @@ body{
 
 /* 額滿：紅字 */
 .tile.full .status-full{color:#b91c1c;font-weight:700}
+.tile.rest{background:#fff7f7;color:#b91c1c;border-color:#efc7c4}
+.tile.stop{background:#f3f4f6;color:#1f2937;border-color:#9ca3af}
 
 /* = Form =（保持你原本外觀，沒動） */
 .form-grid{display:grid;gap:14px;grid-template-columns:1fr}
@@ -837,11 +840,18 @@ body{
   box-shadow:none;
 }
 
-.pill.stop,
-.stop-badge{
+.pill.rest,
+.rest-badge{
   background:#f5e6e5 !important;
   color:#b91c1c !important;
   border-color:#efc7c4 !important;
+}
+
+.pill.stop,
+.stop-badge{
+  background:#e5e7eb !important;
+  color:#1f2937 !important;
+  border-color:#9ca3af !important;
 }
 
 .tile{
@@ -953,8 +963,13 @@ a.btn-ghost:focus{
 }
 
 .status-danger,
-.stop-label{
+.rest-label{
   color:#d32f2f !important;
+  font-weight:800;
+}
+
+.stop-label{
+  color:#1f2937 !important;
   font-weight:800;
 }
 
