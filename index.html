@@ -496,8 +496,10 @@ async function fetchRangeDays(startDate,endDate){
           return {slot,cap:limit,used,remain,status,time,doctor,label};
         });
         const stop = (data && data.stop===true);
-        return {date:key,slots,stop};
-      }catch{ return {date:key,slots:[],stop:false}; }
+        const hasClinic = data?.hasClinic !== false;
+        const closedType = String(data?.closedType||'').trim();
+        return {date:key,slots,stop,hasClinic,closedType};
+      }catch{ return {date:key,slots:[],stop:false,hasClinic:true,closedType:''}; }
     })());
   }
   const arr=await Promise.all(jobs); const map={}; arr.forEach(d=>map[d.date]=d); return map;
@@ -560,12 +562,14 @@ function hydrateRollingCalendar(dayMap){
 
   for(let cur=new Date(WINDOW_MIN); cur<=WINDOW_MAX; cur=addDays(cur,1)){
     const key=ymd(cur);
-    const meta=dayMap[key]||{slots:[],stop:false};
+    const meta=dayMap[key]||{slots:[],stop:false,hasClinic:true,closedType:''};
     const isToday=(key===TODAY_KEY);
     let inner=`<div class="d">${fmtMD(cur)}</div>`;
 
     if(meta.stop===true){
-      inner+=`<div class="meta"><span class="pill stop">${shortSlotLabel('停診')}</span></div>`;
+      const closedType = meta.closedType === '休診' ? '休診' : '停診';
+      const cls = closedType === '休診' ? 'rest' : 'stop';
+      inner+=`<div class="meta"><span class="pill ${cls}">${shortSlotLabel(closedType)}</span></div>`;
     }else if(meta.closed===true || meta.rest===true || meta.off===true){
       inner+=`<div class="meta"><span class="pill full">${shortSlotLabel('休診')}</span></div>`;
     }else{
@@ -612,7 +616,9 @@ function openDay(dateYMD, meta, selectedSlot){
   let html = `<div class="head">${fmtMD(d)}（星期${W[d.getDay()]}）</div>`;
 
   if(meta?.stop===true){
-    html+=`<div class="slot-grid"><div class="tile full"><div class="main"><strong>停診</strong></div></div></div>`;
+    const closedType = meta.closedType === '休診' ? '休診' : '停診';
+    const cls = closedType === '休診' ? 'rest' : 'stop';
+    html+=`<div class="slot-grid"><div class="tile full ${cls}"><div class="main"><strong>${closedType}</strong></div></div></div>`;
   }else if(!slots.length){
     html+=`<div class="slot-grid"><div class="tile"><div class="main">當日無門診</div></div></div>`;
   }else{
