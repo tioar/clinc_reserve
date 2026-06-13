@@ -11,7 +11,6 @@
 <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/png" href="favicon.png">
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
 </head>
 <body>
@@ -53,7 +52,7 @@
 
 <script>
 /* ===== 常數（正式模式會用到） ===== */
-const API = "https://script.google.com/macros/s/AKfycbwGixHlKlD84QdlozE72BPcch2FdKf8wjHeS60qiNNTpBZJDiqujYV2gV2Scnp-gU1C/exec";
+const API = "https://script.google.com/macros/s/AKfycbyAgyDVOpuIvKvqKaxv_pM3sfd_XCUQnVRvfx7KUU5WSZVS08GHujfS52BCacbiAd4/exec";
 const AES_KEY = "A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
 
 function getClientId(){
@@ -201,8 +200,12 @@ const shareBtn  = document.getElementById('shareBtn');
         num    = cachedReservation.num || '';
         submittedAt = cachedReservation.submittedAt || '';
       }else{
-        const r = await axios.get(API, { params:{ action:'detail', id, receipt } });
-        const d = r.data || {};
+        const detailUrl = new URL(API);
+        detailUrl.searchParams.set('action','detail');
+        detailUrl.searchParams.set('id', id);
+        if(receipt) detailUrl.searchParams.set('receipt', receipt);
+        const r = await fetch(detailUrl.href);
+        const d = await r.json();
         if(d.error){ throw new Error('DETAIL_FAIL'); }
 
         ymd    = ymdNorm(d.date);
@@ -212,15 +215,6 @@ const shareBtn  = document.getElementById('shareBtn');
         name   = d.name || '';
         num    = d.num || '';
         submittedAt = d.submittedAt || '';
-      }
-      if(!time && !canUseCache){
-        try{
-          const s2 = await axios.get(API, { params:{ action:'getSlots', date: ymd } });
-          const arr = Array.isArray(s2.data) ? s2.data : (Array.isArray(s2.data?.slots) ? s2.data.slots : []);
-          const hit = arr.find(x => String(x.label) === String(slot));
-          time = hit?.time || '';
-          if(!doctor && hit?.doctor) doctor = String(hit.doctor);
-        }catch(_){}
       }
       if(!time) time = guessTime(slot);
     }
