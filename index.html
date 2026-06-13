@@ -241,7 +241,7 @@
 
 <script>
 /* ====== 基本設定 ====== */
-const API="https://script.google.com/macros/s/AKfycbyrityeHlUpxL1bgpSXzrhN_jQLgjCEBEJantfKgCEtovOCGH0EVMCm6gwiIsvt7n2Y/exec";
+const API="https://script.google.com/macros/s/AKfycbwGixHlKlD84QdlozE72BPcch2FdKf8wjHeS60qiNNTpBZJDiqujYV2gV2Scnp-gU1C/exec";
 const RECAPTCHA_SITE_KEY="6LdqprArAAAAACpuAXemZUH3KNER1t1iw07YjGHu";
 const AES_KEY="A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
 const API_TIMEOUT=15000;
@@ -473,36 +473,53 @@ function renderRollingHeader(){
 }
 
 /* 逐日 slots（只抓後端回傳的開放區間） */
-async function fetchRangeDays(startDate,endDate){
-  const jobs=[];
-  for(let cur=new Date(startDate); cur<=endDate; cur=addDays(cur,1)){
-    const key=ymd(cur);
-    jobs.push((async()=>{
-      try{
-        const r=await axios.get(API,{params:withClient({action:'getSlots',date:key,t:Date.now()}),timeout:API_TIMEOUT});
-        const data=r.data||{};
-        if (!Array.isArray(data) && data && data.nonce && data.sig && data.exp) {
-          nonceStore[key] = {nonce:String(data.nonce), sig:String(data.sig), exp:Number(data.exp)};
-        }
-        const raw=Array.isArray(data)?data:(Array.isArray(data?.slots)?data.slots:[]);
-        const slots=(raw||[]).map(x=>{
-          const limit=Number(x.limit)||0, used=Number(x.used)||0, remain=Math.max(0,limit-used);
-          const label=String(x.label||'');
-          const slot=label.includes('早')?'early':label.includes('午')?'noon':label.includes('晚')?'night':label.includes('約')?'appt':'other';
-          const time=x.time||x.timeRange||'';
-          const doctor=String(x.doctor||'').replace(/[［\[]|[］\]]/g,'');
-          const rawStatus=String(x.status||'').toLowerCase();
-          const status=(limit<=0 || rawStatus==='closed')?'closed':((remain<=0 || rawStatus==='full')?'full':'open');
-          return {slot,cap:limit,used,remain,status,time,doctor,label};
-        });
-        const stop = (data && data.stop===true);
-        const hasClinic = data?.hasClinic !== false;
-        const closedType = String(data?.closedType||'').trim();
-        return {date:key,slots,stop,hasClinic,closedType};
-      }catch{ return {date:key,slots:[],stop:false,hasClinic:true,closedType:''}; }
-    })());
+function normalizeDayMeta(data,key){
+  data=data||{};
+  if (!Array.isArray(data) && data && data.nonce && data.sig && data.exp) {
+    nonceStore[key] = {nonce:String(data.nonce), sig:String(data.sig), exp:Number(data.exp)};
   }
-  const arr=await Promise.all(jobs); const map={}; arr.forEach(d=>map[d.date]=d); return map;
+  const raw=Array.isArray(data)?data:(Array.isArray(data?.slots)?data.slots:[]);
+  const slots=(raw||[]).map(x=>{
+    const limit=Number(x.limit)||0, used=Number(x.used)||0, remain=Math.max(0,limit-used);
+    const label=String(x.label||'');
+    const slot=label.includes('早')?'early':label.includes('午')?'noon':label.includes('晚')?'night':label.includes('約')?'appt':'other';
+    const time=x.time||x.timeRange||'';
+    const doctor=String(x.doctor||'').replace(/[［\[]|[］\]]/g,'');
+    const rawStatus=String(x.status||'').toLowerCase();
+    const status=(limit<=0 || rawStatus==='closed')?'closed':((remain<=0 || rawStatus==='full')?'full':'open');
+    return {slot,cap:limit,used,remain,status,time,doctor,label};
+  });
+  const stop = (data && data.stop===true);
+  const hasClinic = data?.hasClinic !== false;
+  const closedType = String(data?.closedType||'').trim();
+  return {date:key,slots,stop,hasClinic,closedType};
+}
+
+async function fetchRangeDays(startDate,endDate){
+  try{
+    const startKey=ymd(startDate), endKey=ymd(endDate);
+    const r=await axios.get(API,{params:withClient({action:'getSlotsRange',start:startKey,end:endKey,t:Date.now()}),timeout:API_TIMEOUT});
+    const days=Array.isArray(r.data?.days)?r.data.days:[];
+    if(!days.length) throw new Error('empty_range');
+    const map={};
+    days.forEach(d=>{
+      const key=String(d.date||'').trim();
+      if(key) map[key]=normalizeDayMeta(d,key);
+    });
+    return map;
+  }catch(_){
+    const jobs=[];
+    for(let cur=new Date(startDate); cur<=endDate; cur=addDays(cur,1)){
+      const key=ymd(cur);
+      jobs.push((async()=>{
+        try{
+          const r=await axios.get(API,{params:withClient({action:'getSlots',date:key,t:Date.now()}),timeout:API_TIMEOUT});
+          return normalizeDayMeta(r.data||{},key);
+        }catch{ return {date:key,slots:[],stop:false,hasClinic:true,closedType:''}; }
+      })());
+    }
+    const arr=await Promise.all(jobs); const map={}; arr.forEach(d=>map[d.date]=d); return map;
+  }
 }
 
 function slotLabel(s){
@@ -807,7 +824,16 @@ $('submitBtn').addEventListener('click',async(e)=>{
     const idFromApi=r?.data?.id||r?.data?.Id||r?.data?.bookingId||r?.data?.data?.id;
     const receipt=r?.data?.receipt||r?.data?.rcpt||'';
     try{ if(receipt&&idFromApi) sessionStorage.setItem('rcpt:'+String(idFromApi),String(receipt));
-         sessionStorage.setItem('lastBookingId',String(idFromApi)); }catch(_){}
+         sessionStorage.setItem('lastBookingId',String(idFromApi));
+         sessionStorage.setItem('lastReservation', JSON.stringify({
+           id:idFromApi,
+           receipt,
+           date:r.data.date||d,
+           slot:r.data.slot||s,
+           name:r.data.name||n,
+           num:r.data.num||'',
+           submittedAt:r.data.submittedAt||''
+         })); }catch(_){}
     const baseDir=new URL('.',location.href), successUrl=new URL('success.html',baseDir);
     successUrl.searchParams.set('cipher',aesEnc({id:idFromApi,receipt}));
     location.assign(successUrl.href);
