@@ -220,12 +220,15 @@
         <h5 class="mb-3 fw-bold">新增臨時異動</h5>
         <input type="date" id="newDate" class="form-control mb-3">
 
-        <!-- 停診開關 -->
-        <div class="form-check form-switch mb-3">
-          <input class="form-check-input" type="checkbox" id="neStop">
-          <label class="form-check-label stop-label" for="neStop">
-            是否停診（勾選後僅寫入停診旗標，其他上限/時段忽略）
-          </label>
+        <div class="d-flex flex-wrap gap-3 mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="neRest">
+            <label class="form-check-label rest-label" for="neRest">休診</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="neStop">
+            <label class="form-check-label stop-label" for="neStop">停診</label>
+          </div>
         </div>
 
         <div class="row g-2 align-items-center">
@@ -370,7 +373,7 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 /* ===== API 與共用 ===== */
-const API = "https://script.google.com/macros/s/AKfycbzcepushvWBq68DVxUfSLQz640G-p23-zVDfpab5y7cvJ9KV5INARTpEQmgZDFtjDY/exec";
+const API = "https://script.google.com/macros/s/AKfycbyrityeHlUpxL1bgpSXzrhN_jQLgjCEBEJantfKgCEtovOCGH0EVMCm6gwiIsvt7n2Y/exec";
 let ADMIN_TOKEN = sessionStorage.getItem('ADMIN_TOKEN')||"";
 
 function getClientId(){
@@ -733,12 +736,18 @@ const neApptTime=document.getElementById('neApptTime');
 const neNote=document.getElementById('neNote');
 const neStartNo=document.getElementById('neStartNo');
 const neStep=document.getElementById('neStep');
+const neRest=document.getElementById('neRest');
 const neStop=document.getElementById('neStop');
 const addBtn=document.getElementById('addBtn');
 const tbl=document.getElementById('tbl');
 
+function newClosedType(){
+  if(neRest.checked) return '休診';
+  if(neStop.checked) return '停診';
+  return '';
+}
 function toggleNewStopLock() {
-  const lock = neStop.checked;
+  const lock = !!newClosedType();
   [
     neEarlyLimit, neNoonLimit, neNightLimit, neApptLimit,
     neEarlyTime, neNoonTime, neNightTime, neApptTime,
@@ -751,31 +760,40 @@ function toggleNewStopLock() {
     }
   });
 }
-neStop.addEventListener('change', toggleNewStopLock);
+neRest.addEventListener('change', () => {
+  if(neRest.checked) neStop.checked=false;
+  toggleNewStopLock();
+});
+neStop.addEventListener('change', () => {
+  if(neStop.checked) neRest.checked=false;
+  toggleNewStopLock();
+});
 
 addBtn.onclick = async ()=>{
   try{
     if(!newDate.value) return alert("請選日期");
-    const isStop = !!neStop.checked;
+    const closedType = newClosedType();
+    const isClosed = !!closedType;
 
     const q={
       日期:newDate.value,
-      是否停診: isStop ? true : false,
-      早診上限: isStop ? 0 : Number(neEarlyLimit.value||0),
-      午診上限: isStop ? 0 : Number(neNoonLimit.value||0),
-      晚診上限: isStop ? 0 : Number(neNightLimit.value||0),
-      約診上限: isStop ? 0 : Number(neApptLimit.value||0),
-      早診時段: isStop ? '' : (neEarlyTime.value||''),
-      午診時段: isStop ? '' : (neNoonTime.value||''),
-      晚診時段: isStop ? '' : (neNightTime.value||''),
-      約診時段: isStop ? '' : (neApptTime.value||''),
-      起始號碼: isStop ? 1 : Number(neStartNo.value||1),
-      間隔位數: isStop ? 1 : Math.max(1,Number(neStep.value||1)),
+      是否門診: isClosed ? false : true,
+      休停狀態: closedType,
+      早診上限: isClosed ? 0 : Number(neEarlyLimit.value||0),
+      午診上限: isClosed ? 0 : Number(neNoonLimit.value||0),
+      晚診上限: isClosed ? 0 : Number(neNightLimit.value||0),
+      約診上限: isClosed ? 0 : Number(neApptLimit.value||0),
+      早診時段: isClosed ? '' : (neEarlyTime.value||''),
+      午診時段: isClosed ? '' : (neNoonTime.value||''),
+      晚診時段: isClosed ? '' : (neNightTime.value||''),
+      約診時段: isClosed ? '' : (neApptTime.value||''),
+      起始號碼: isClosed ? 1 : Number(neStartNo.value||1),
+      間隔位數: isClosed ? 1 : Math.max(1,Number(neStep.value||1)),
       備註: neNote.value||''
     };
     await adminCall('adminAdd', q);
     alert("新增完成"); loadSpecials();
-    neStop.checked=false; toggleNewStopLock();
+    neRest.checked=false; neStop.checked=false; toggleNewStopLock();
   }catch(e){ console.error(e); alert('新增失敗或尚未登入'); }
 };
 
@@ -784,10 +802,14 @@ async function loadSpecials(){
   const tbody=tbl.querySelector('tbody'); tbody.innerHTML="";
   arr.forEach(x=>{
     const tr=document.createElement('tr');
-    const stop = (x["是否停診"]===true || String(x["是否停診"]).toUpperCase()==='TRUE');
+    const stop = (x.stop===true || x["是否門診"]===false || x["是否停診"]===true || String(x["是否停診"]).toUpperCase()==='TRUE');
+    const closedType = stop ? (x.closedType || x["休停狀態"] || '停診') : '';
+    const badge = stop
+      ? (closedType === '休診' ? '<span class="badge rest-badge">休診</span>' : '<span class="badge stop-badge">停診</span>')
+      : '<span class="badge bg-secondary">—</span>';
     tr.innerHTML=`
       <td>${x.日期}</td>
-      <td>${ stop ? '<span class="badge stop-badge">停診</span>' : '<span class="badge bg-secondary">—</span>' }</td>
+      <td>${badge}</td>
       <td>${x.早診上限||0}</td><td>${x.午診上限||0}</td><td>${x.晚診上限||0}</td><td>${x.約診上限||0}</td>
       <td>${x.早診時段||''}</td><td>${x.午診時段||''}</td><td>${x.晚診時段||''}</td><td>${x.約診時段||''}</td>
       <td>${x.起始號碼||1}</td><td>${x.間隔位數||1}</td>
@@ -807,12 +829,19 @@ async function delRow(id){
 }
 async function editRow(id){
   const f=asObj(await adminCall('adminOne',{id}));
+  const editClosedType = (f.closedType || f["休停狀態"] || ((f["是否停診"]===true || String(f["是否停診"]).toUpperCase()==='TRUE') ? '停診' : ''));
   const html=`<div class="modal fade" id="editM"><div class="modal-dialog modal-lg"><div class="modal-content">
    <div class="modal-header"><h5 class="modal-title">編輯 ${f.日期}</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
    <div class="modal-body">
-     <div class="form-check form-switch mb-3">
-       <input class="form-check-input" type="checkbox" id="edStop" ${ (f["是否停診"]===true || String(f["是否停診"]).toUpperCase()==='TRUE') ? 'checked' : '' }>
-       <label class="form-check-label stop-label" for="edStop">是否停診</label>
+     <div class="d-flex flex-wrap gap-3 mb-3">
+       <div class="form-check form-switch">
+         <input class="form-check-input" type="checkbox" id="edRest" ${ editClosedType === '休診' ? 'checked' : '' }>
+         <label class="form-check-label rest-label" for="edRest">休診</label>
+       </div>
+       <div class="form-check form-switch">
+         <input class="form-check-input" type="checkbox" id="edStop" ${ editClosedType !== '休診' && editClosedType ? 'checked' : '' }>
+         <label class="form-check-label stop-label" for="edStop">停診</label>
+       </div>
      </div>
 
      <div class="row g-2">
@@ -840,6 +869,7 @@ async function editRow(id){
   document.body.insertAdjacentHTML('beforeend', html);
   const mEl=document.getElementById("editM"); const m=new bootstrap.Modal(mEl); m.show();
 
+  const edRest = document.getElementById('edRest');
   const edStop = document.getElementById('edStop');
   const edEL   = document.getElementById('edEL');
   const edNL   = document.getElementById('edNL');
@@ -852,8 +882,13 @@ async function editRow(id){
   const edStartNo = document.getElementById('edStartNo');
   const edStep = document.getElementById('edStep');
 
+  function editClosedTypeNow(){
+    if(edRest.checked) return '休診';
+    if(edStop.checked) return '停診';
+    return '';
+  }
   function toggleEditStopLock(){
-    const lock = edStop.checked;
+    const lock = !!editClosedTypeNow();
     [edEL,edNL,edTL,edAL,edTE,edTN,edTLt,edTA,edStartNo,edStep].forEach(el=>{
       el.disabled = lock;
       if(lock){
@@ -862,26 +897,35 @@ async function editRow(id){
       }
     });
   }
-  edStop.addEventListener('change', toggleEditStopLock);
+  edRest.addEventListener('change', () => {
+    if(edRest.checked) edStop.checked=false;
+    toggleEditStopLock();
+  });
+  edStop.addEventListener('change', () => {
+    if(edStop.checked) edRest.checked=false;
+    toggleEditStopLock();
+  });
   toggleEditStopLock();
 
   document.getElementById("saveBtn").onclick=async()=>{
     if(!confirm("確定儲存？")) return;
-    const isStop = !!edStop.checked;
+    const closedType = editClosedTypeNow();
+    const isClosed = !!closedType;
     await adminCall('adminAdd',{
       日期:f.日期,
-      是否停診: isStop ? true : false,
-      早診上限: isStop ? 0 : Number(edEL.value||0),
-      午診上限: isStop ? 0 : Number(edNL.value||0),
-      晚診上限: isStop ? 0 : Number(edTL.value||0),
-      約診上限: isStop ? 0 : Number(edAL.value||0),
-      早診時段: isStop ? '' : edTE.value,
-      午診時段: isStop ? '' : edTN.value,
-      晚診時段: isStop ? '' : edTLt.value,
-      約診時段: isStop ? '' : edTA.value,
+      是否門診: isClosed ? false : true,
+      休停狀態: closedType,
+      早診上限: isClosed ? 0 : Number(edEL.value||0),
+      午診上限: isClosed ? 0 : Number(edNL.value||0),
+      晚診上限: isClosed ? 0 : Number(edTL.value||0),
+      約診上限: isClosed ? 0 : Number(edAL.value||0),
+      早診時段: isClosed ? '' : edTE.value,
+      午診時段: isClosed ? '' : edTN.value,
+      晚診時段: isClosed ? '' : edTLt.value,
+      約診時段: isClosed ? '' : edTA.value,
       備註: document.getElementById('edNote').value,
-      起始號碼: isStop ? 1 : Number(edStartNo.value||1),
-      間隔位數: isStop ? 1 : Math.max(1, Number(edStep.value||1))
+      起始號碼: isClosed ? 1 : Number(edStartNo.value||1),
+      間隔位數: isClosed ? 1 : Math.max(1, Number(edStep.value||1))
     });
     const bsModal = bootstrap.Modal.getInstance(mEl); bsModal.hide();
     mEl.addEventListener('hidden.bs.modal', ()=> mEl.remove(), {once:true});
