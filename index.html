@@ -1,920 +1,656 @@
-  <!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>陳萬龍診所門診線上預約</title>
-<link rel="icon" type="image/png" href="favicon.png">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<!-- 近似楷體的開源備援 -->
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<title>陳萬龍診所看診進度</title>
+<meta name="description" content="即時看診進度與門診資訊">
+<meta name="theme-color" content="#35579A">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="陳萬龍診所｜看診進度">
+<meta property="og:description" content="即時看診進度與門診資訊。">
+<meta property="og:image" content="og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tioar.github.io/Clinic_calling/">
+<meta property="og:locale" content="zh_TW">
+
+<!-- 本地楷體預載 - 移除 crossorigin -->
+<link rel="preload" href="./fonts/CwTeXKai.woff2" as="font" type="font/woff2">
+<link rel="preload" href="./fonts/TW-Kai.woff2"  as="font" type="font/woff2">
+
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- 本地 Lora 字體預載 - 移除 crossorigin -->
+<link rel="preload" href="fonts/Lora-Medium.woff2" as="font" type="font/woff2">
+<link rel="preload" href="fonts/Lora-Bold.woff2" as="font" type="font/woff2">
+
 <style>
-/* index calendar layout only */
-.rule-bar{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:6px;
+/* ===== 內嵌本地楷體 ===== */
+@font-face{
+  font-family:"CwTeXKai";
+  src:url("./fonts/CwTeXKai.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
 }
-.cal-range-note,
-.nowtime{
-  display:block;
+@font-face{
+  font-family:"TW-Kai";
+  src:url("./fonts/TW-Kai.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
 }
-.pill,
-.slot-choice{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  line-height:1 !important;
-  min-height:34px;
-  padding:0 .45rem !important;
+
+/* Lora 字體 - 只針對數字 0-9 */
+@font-face{
+  font-family:"Lora";
+  font-style:normal;
+  font-weight:500;
+  font-display:swap;
+  src: url("fonts/Lora-Medium.woff2") format("woff2");
+  unicode-range: U+0030-0039, U+002D, U+003A, U+002F, U+0028, U+0029; /* 0-9 和 - : / ( ) */
 }
-.pill .lbl,
-.slot-choice .lbl{
-  display:block;
-  line-height:1 !important;
-  margin:0 !important;
-  padding:0 !important;
+
+@font-face{
+  font-family:"Lora";
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src: url("fonts/Lora-Bold.woff2") format("woff2");
+  unicode-range: U+0030-0039, U+002D, U+003A, U+002F, U+0028, U+0029; /* 0-9 和 - : / ( ) */
 }
-#days .day{
-  box-sizing:border-box;
-  overflow:visible;
+
+/* 備用：如果本地字體載入失敗，使用 Google Fonts */
+@font-face{
+  font-family:"LoraFallback";
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src: url("https://fonts.gstatic.com/s/lora/v35/0QIhMX1D_JOuMw_LIftO.woff2") format("woff2");
+  unicode-range: U+0030-0039, U+002D, U+003A, U+002F, U+0028, U+0029;
 }
-#days .day .d{
-  white-space:nowrap;
-  line-height:1.2;
-  margin-bottom:8px;
+
+@font-face{
+  font-family:"LoraFallback";
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src: url("https://fonts.gstatic.com/s/lora/v35/0QIiMX1D_JOuO4xXDftO-K6j.woff2") format("woff2");
+  unicode-range: U+0030-0039, U+002D, U+003A, U+002F, U+0028, U+0029;
 }
-@media (max-width:600px){
-  .wrap{
-    padding-left:10px;
-    padding-right:10px;
-  }
-  .cardish{
-    padding-left:12px;
-    padding-right:12px;
-  }
-  .grid{
-    gap:6px;
-    padding-left:6px;
-    padding-right:6px;
-  }
-  #days .day{
-    min-height:92px;
-    padding:8px 6px;
-    border-radius:12px !important;
-    overflow:visible;
-  }
-  #days .day.selected,
-  #days .day.is-selected{
-    border-width:3px !important;
-    padding:6px 4px;
-  }
-  #days .day .d{
-    font-size:1rem;
-    font-weight:700;
-    white-space:nowrap;
-    line-height:1.2;
-    margin-bottom:8px;
-  }
-  #days .day .meta{
-    gap:6px;
-  }
-  #days .pill,
-  #days .slot-choice{
-    min-height:34px;
-    height:34px;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    line-height:1 !important;
-    padding:0 .25rem !important;
-  }
-  #days .pill .lbl,
-  #days .slot-choice .lbl{
-    line-height:1 !important;
-    margin:0 !important;
-    padding:0 !important;
-  }
+
+/* ===== 顏色/字型變數 ===== */
+:root{
+  --classic:#35579A;
+  --soft:#A5B8D0;
+  --light:#EAF1FF;
+  --beige:#D8C0AD;
+  --pill-red:#E53935;
+  --pill-coral:#F37163;
+  --digit-red:#B91C1C;
+
+  /* 全站楷體（含備援） */
+  --text-font: "CwTeXKai","TW-Kai","DFKai-SB","BiauKai","KaiTi","LXGW WenKai TC",serif;
+  /* 數字使用 Lora，加入多層備援 */
+  --digit-font: "Lora", "LoraFallback", Georgia, "Times New Roman", serif;
+}
+
+/* ===== 基本排版 ===== */
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  /* 全站使用混合字體：Lora處理數字，楷體處理中文 */
+  font-family: "Lora", "LoraFallback", var(--text-font);
+  -webkit-font-smoothing:antialiased;
+  color:#1c1c1c;
+  background:#fff;
+  padding:clamp(12px,4vw,36px);
+  display:flex; justify-content:center;
+}
+
+.container{
+  width:min(960px,96vw);
+  background:#fff;
+  border:1px solid var(--soft);
+  padding:clamp(16px,4vw,32px);
+  text-align:center;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.08),
+    0 2px 0 rgba(165,184,208,.35) inset;
+}
+
+/* 跑馬燈：#658DC6 白字（字級≈注意事項） */
+.marquee{
+  --gap:2rem; --speed:45s;
+  background:#658DC6; color:#fff;
+  padding:10px 0; margin:0 auto 12px;
+  overflow:hidden; white-space:nowrap; user-select:none;
+  font-size:clamp(14px,2.4vw,16px);
+  letter-spacing:.5px;
+}
+.marquee__track{ display:inline-flex; align-items:center; width:max-content; animation:marquee var(--speed) linear infinite; }
+.marquee__track>span{ padding-right:var(--gap); flex-shrink:0; }
+.marquee:hover .marquee__track{ animation-play-state:paused; }
+@keyframes marquee{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* Logo */
+.logo{ height:clamp(120px,22vw,200px); max-width:82vw; object-fit:contain; display:block; margin:0 auto; }
+
+/* 六邊形狀態標籤 */
+.pill-wrap{ display:flex; justify-content:center; margin:10px 0 0; }
+.hex{
+  display:inline-block; padding:.55rem 1.4rem;
+  color:#fff; font-weight:800; letter-spacing:.5px;
+  clip-path:polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  user-select:none;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+.hex.red{background:var(--pill-red)}
+.hex.coral{background:var(--pill-coral)}
+
+/* 標題 / 時間 */
+.title-row h1{
+  margin:10px 0 6px;
+  color:#1f2f63;
+  font-weight:800;
+  font-size:clamp(32px,5vw,44px);
+  letter-spacing:.06em;
+}
+.now-time{
+  color:var(--classic);
+  font-size:clamp(18px,3.8vw,24px);
+  font-weight:700;
+  font-synthesis:weight;
+  /* 時間中的數字也使用 Lora */
+  font-family: var(--digit-font);
+}
+
+/* 中央大號碼（明確使用 Lora 字體） */
+.big-wrap{ margin:10px 0 8px; position:relative; }
+/* 僅覆蓋號碼區域；不改變號碼的字體或排版。 */
+.number-loading-overlay{
+  position:absolute; inset:0; z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px;
+  padding:12px;
+  background:rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  color:var(--classic);
+  font-family:var(--text-font);
+  font-size:clamp(16px,3.5vw,24px);
+  font-weight:700; line-height:1.4;
+  text-align:center;
+}
+.number-loading-overlay[hidden]{ display:none; }
+.number-spinner{
+  width:30px; height:30px; flex-shrink:0;
+  border:4px solid rgba(53,87,154,.2);
+  border-top-color:var(--classic); border-radius:50%;
+  animation:number-spin .9s linear infinite;
+}
+@keyframes number-spin{ to{ transform:rotate(360deg); } }
+/* 不支援毛玻璃時，仍讓底下號碼模糊且隱約可見。 */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .big-wrap.is-obscured .number{ filter:blur(10px); opacity:.5; }
+}
+.number{
+  font-family: var(--digit-font) !important;
+  color:#B91C1C;
+  font-weight:700;
+  font-size:clamp(120px,20vw,260px);
+  line-height:1;
+  letter-spacing:.02em;
+  -webkit-text-stroke:.4px currentColor;
+  /* iOS 特別優化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 語音開關：核取方塊 + 🔔/🔕 */
+.voice-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin:12px 0 14px; }
+.voice-label{ font-weight:800; color:#3b2e1e; font-size:clamp(16px,3.5vw,20px); }
+.chk{ width:22px; height:22px; accent-color:var(--beige); appearance:auto; cursor:pointer; }
+.bell{ font-size:22px; }
+
+/* 注意事項 */
+.note{
+  background:#F2F6FB;
+  padding:14px 18px;
+  border:none; border-radius:0;
+  color:#274a6b; font-weight:700;
+  width:min(820px,100%); margin:0 auto;
+  font-size:clamp(16px,3.2vw,20px);
+}
+.note p{ margin:.4em 0; }
+
+/* ===== 只加回：彩條 + 門診表 ===== */
+.palette{
+  height:8px;
+  margin:8px auto 14px;
+  width:min(560px,90%);
+  background:linear-gradient(
+    to right,
+    #D8C0AD 0 22%,
+    #6db337 22% 45%,
+    #35579A 45% 82%,
+    #A5B8D0 82% 100%
+  );
+}
+.schedule{
+  margin-top:6px;
+  max-width:100%;
+  border:none;
+  box-shadow:none;
+}
+
+/* SR only */
+.sr-only{
+  position:absolute !important; width:1px; height:1px;
+  padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0);
+  border:0; white-space:nowrap;
 }
 </style>
 </head>
+
 <body>
-<!-- 全頁遮罩 -->
-<div id="mask">
-  <div class="spin-here"></div>
-  <div class="loading-text">處理中，請稍候</div>
-</div>
-
-<div class="wrap">
-  <div class="page-head"><div class="logo">＋</div><h1>陳萬龍診所門診線上預約</h1></div>
-
-  <div class="cardish">
-    <div class="cal-head">
-      <div class="cal-title">
-        <span class="title-text" id="calTitle">—</span>
+  <div class="container">
+    <!-- 跑馬燈 -->
+    <div class="marquee" aria-label="診所訊息跑馬燈">
+      <div class="marquee__track" id="marqueeTrack">
+        <span>✦ 陳萬龍診所門診時間：☀︎ 早診 08:30–11:30（最晚報到10:30）；☁︎ 午診 14:00–17:00（最晚報到16:00）；☾ 晚診 18:00–20:30（最晚報到20:00）。逾時視同放棄，名額將釋出給現場掛號。</span>
+        <span aria-hidden="true">✦ 陳萬龍診所門診時間：☀︎ 早診 08:30–11:30（最晚報到10:30）；☁︎ 午診 14:00–17:00（最晚報到16:00）；☾ 晚診 18:00–20:30（最晚報到20:00）。逾時視同放棄，名額將釋出給現場掛號。</span>
       </div>
     </div>
 
-    <div class="rule-bar">
-      <span class="cal-range-note">（未顯示之日期代表尚未開放；無診別的日期代表當日無門診。）</span>
-      <span id="nowTime" class="nowtime"></span>
-      <button class="rule-btn" id="openRules">開放預約日期規則</button>
+    <!-- Logo -->
+    <img class="logo" id="clinicLogo" src="./logo1.jpg" alt="陳萬龍診所 LOGO">
+
+    <!-- 標題 & 時間 -->
+    <div class="title-row"><h1 id="sectionTitle">目前看診號碼</h1></div>
+    <div class="now-time" id="twTime">—</div>
+
+    <!-- 六邊形狀態 -->
+    <div class="pill-wrap" aria-live="polite" id="statusPill"></div>
+
+    <!-- 中央號碼（Lora 字體） -->
+    <div class="big-wrap is-obscured" id="numberWrap" aria-live="polite" aria-atomic="true">
+      <div id="bigNumber" class="number">—</div>
+      <div id="numberLoadingOverlay" class="number-loading-overlay">
+        <span class="number-spinner" aria-hidden="true"></span>
+        <span id="numberLoadingText">讀取叫號中</span>
+      </div>
     </div>
 
-    <!-- 週標題 -->
-    <div class="grid" id="whead"></div>
+    <!-- 語音開關 -->
+    <div class="voice-row">
+      <label class="voice-label" for="voiceToggle">開啟語音叫號提醒</label>
+      <input type="checkbox" id="voiceToggle" class="chk" aria-checked="false" aria-labelledby="voiceToggle"/>
+      <span id="bell" class="bell" aria-hidden="true">🔕</span>
+      <div id="voiceHint" class="sr-only">勾選後，號碼變更時會自動語音播報。</div>
+    </div>
 
-    <!-- 亮面掃過骨架 -->
-    <div id="calSkeleton" class="skel-grid" aria-hidden="true"></div>
+    <div id="srStatus" class="sr-only" aria-live="polite"></div>
 
-    <!-- 真實日期格與面板 -->
-    <div class="grid is-hidden" id="days"></div>
-    <div class="section" id="dayPanel"></div>
-    <div class="section picked is-hidden" id="picked"></div>
+    <!-- 注意事項 -->
+    <div class="note">
+      <p>♦︎ 雲端號碼僅供參考，實際叫號以現場為準。每位病患約 3–5 分鐘，請提前到場在可看到燈號的位置等候以免過號。</p>
+      <p>♦︎ 若已過號請再次向櫃檯報到，將依現場狀況調整安排。門診可能視現場狀況提前停止掛號，如有疑問請來電 (03)515-2971。</p>
+    </div>
+
+    <!-- 彩色條 + 門診表 -->
+    <div class="palette" aria-hidden="true"></div>
+    <img class="schedule" id="scheduleImg" src="./schedule.png" alt="門診時間表">
   </div>
-
-  <!-- 表單 -->
-  <div class="cardish section mt-3">
-    <input type="hidden" id="date"/><input type="hidden" id="slot"/>
-    <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response"/>
-
-    <div class="form-grid">
-      <div>
-        <div class="form-label-strong">姓名 *</div>
-        <input id="name" type="text" class="form-input" autocomplete="off"/>
-      </div>
-
-    <div>
-  <!-- 第一行：主標題 -->
-      <div class="form-label-strong">出生年月日 *</div>
-
-  <!-- 第二行：藍色說明文字 -->
-      <div class="form-label-note">
-    請以數字輸入，可以用「西元」年月日（例如 19901120）；或「民國」年月日（例如 470613）。
-      </div>
-
-      <div class="date-wrap" id="dateWrap">
-    <!-- ★ 改成 text＋數字鍵盤，不用原生 date 轉盤 -->
-        <input id="birthday" type="text" class="form-input" inputmode="numeric" autocomplete="off"/>
-        <span class="date-hint" id="dateHint"> 年/月/日</span>
-      </div>
-    </div>
-
-
-      <div>
-        <div class="form-label-strong">身分證字號 *</div>
-        <input id="idnum" type="text" maxlength="10" class="form-input" placeholder="A123456789" autocomplete="off"/>
-      </div>
-
-      <div>
-        <div class="form-label-strong">聯絡電話 *</div>
-        <input id="phone" type="text" maxlength="10" inputmode="numeric" pattern="\d{10}" class="form-input" placeholder="0958xxxxxx" autocomplete="off"/>
-      </div>
-    </div>
-
-    <div class="mt-2">
-      <label class="agree"><input id="agree" type="checkbox"/><span>我已閱讀並同意 <a href="#" id="showNotice">預約須知 *</a></span></label>
-    </div>
-    <div class="form-actions mt-3">
-      <button id="submitBtn" class="action-btn primary-action-btn">送出預約</button>
-      <a class="action-btn query-link-btn" href="query.html">門診預約查詢/取消</a>
-    </div>
-  </div>
-</div>
-
-<!-- 規則 Modal -->
-<div class="modal fade" id="rulesModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header modal-header-soft">
-        <h5 class="modal-title brand-title">開放預約日期規則</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
-      </div>
-      <div class="modal-body">
-        <div class="rule-panel">
-          <div class="rule-line"><span class="chip chip-strong">週一</span><span>可預約 →</span><span class="chip chip-range">［ 週四 ~ 下下週一 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週二</span><span>可預約 →</span><span class="chip chip-range">［ 週五 ~ 下下週二 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週三</span><span>可預約 →</span><span class="chip chip-range">［ 週六 ~ 下下週三 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週四</span><span>可預約 →</span><span class="chip chip-range">［ 下週一 ~ 下下週四 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週五</span><span>可預約 →</span><span class="chip chip-range">［ 下週二 ~ 下下週五 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週六</span><span>可預約 →</span><span class="chip chip-range">［ 下週二 ~ 下下週六 ］</span></div>
-          <div class="rule-line"><span class="chip chip-strong">週日</span><span>可預約 →</span><span class="chip chip-range">［ 下週三 ~ 下下週日 ］</span></div>
-        </div>
-        <div class="rules-note">如對門診時間有疑問，請對照「門診時刻表」與「最新消息」確認是否有門診異動。</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 預約須知 Modal -->
-<div class="modal fade" id="noticeModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header modal-header-plain">
-        <h5 class="modal-title">預約須知與個資告知</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
-      </div>
-      <div class="modal-body text-start">
-        <ol class="numlist">
-          <li>本院蒐集之個人資料（姓名、電話、身分證字號）僅用於掛號與醫療聯繫，不另作他用。</li>
-          <li>請於預約的門診結束前一小時到場報到（早診10:30前；午診16:00前；晚診20:00前），逾時視同放棄，會釋出名額給現場掛號。</li>
-          <li>如需取消，請於前一日線上辦理；當日請以電話通知 (03) 515-2971。</li>
-          <li>本院保留因醫療需求調整看診順序之權利。</li>
-          <li>勾選同意表示理解並接受上述內容。</li>
-        </ol>
-        <div class="d-grid mt-3">
-          <button id="agreeConfirm" class="btn-main">同意</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Bootstrap -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-/* ====== 基本設定 ====== */
-const API="https://script.google.com/macros/s/AKfycbyAgyDVOpuIvKvqKaxv_pM3sfd_XCUQnVRvfx7KUU5WSZVS08GHujfS52BCacbiAd4/exec";
-const RECAPTCHA_SITE_KEY="6LdqprArAAAAACpuAXemZUH3KNER1t1iw07YjGHu";
-const AES_KEY="A2x5fT9qR7nC1vB8mK3pZ6sD4uH0yW2j";
-const API_TIMEOUT=15000;
+/* 跑馬燈暫停/恢復 */
+(function(){
+  const marquee = document.querySelector('.marquee');
+  const track = document.getElementById('marqueeTrack');
+  const pause = () => track.style.animationPlayState='paused';
+  const run   = () => track.style.animationPlayState='running';
+  marquee.addEventListener('pointerdown', pause);
+  marquee.addEventListener('pointerup', run);
+  marquee.addEventListener('pointerleave', run);
+  marquee.addEventListener('pointercancel', run);
+})();
 
-function getClientId(){
-  const k='clientId';
-  let v=localStorage.getItem(k);
-  if(!v){
-    v=(window.crypto && crypto.randomUUID)?crypto.randomUUID():('cid-'+Math.random().toString(16).slice(2)+Date.now().toString(16));
-    localStorage.setItem(k,v);
+/* 圖片備援：Logo + 門診表 */
+(function(){
+  const logo = document.getElementById('clinicLogo');
+  const logoFallbacks = [
+    './logo.png',
+    'https://raw.githubusercontent.com/tioar/Clinic_calling/main/logo1.jpg',
+    'https://raw.githubusercontent.com/tioar/Clinic_calling/main/logo.png'
+  ];
+  let li=0; logo.onerror=function(){ if(li<logoFallbacks.length){ this.src=logoFallbacks[li++]; } else { this.style.display='none'; } };
+
+  const sch = document.getElementById('scheduleImg');
+  if (sch){
+    const schFallbacks = [
+      'https://raw.githubusercontent.com/tioar/Clinic_calling/main/schedule.png'
+    ];
+    let si=0; sch.onerror=function(){ if(si<schFallbacks.length){ this.src=schFallbacks[si++]; } else { this.style.display='none'; } };
   }
-  return v;
+})();
+
+/* ===== 語音設定 ===== */
+const TTS_RATE = 0.55;
+const UA = navigator.userAgent.toLowerCase();
+const isWinChrome = UA.includes('windows') && UA.includes('chrome') && !UA.includes('edg');
+const WARM_CANCEL_DELAY = isWinChrome ? 220 : 120;
+const WARM_PLAY_DELAY   = isWinChrome ? 100 : 60;
+const WARM_SAFETY_MS    = isWinChrome ? 800 : 650;
+
+const Voice = { ready:false, unlocked:false, voices:[], zhVoice:null, enabled:false, timer:null };
+function loadVoices(){
+  const list = window.speechSynthesis?.getVoices?.() || [];
+  Voice.voices = list;
+  Voice.zhVoice =
+    list.find(v => v.lang?.toLowerCase().startsWith('zh-tw')) ||
+    list.find(v => v.lang?.toLowerCase().startsWith('zh-hk')) ||
+    list.find(v => v.lang?.toLowerCase().startsWith('zh-cn')) ||
+    list.find(v => v.lang?.toLowerCase().startsWith('zh'));
 }
-function getUA(){ return navigator.userAgent || ''; }
-function withClient(params){ return Object.assign({ clientId:getClientId(), ua:getUA() }, params||{}); }
-
-/* 一次性簽章暫存 */
-const nonceStore = {}; // { 'YYYY-MM-DD': {nonce, sig, exp} }
-
-/* ====== 小工具 ====== */
-function onlyDigits(s){ return String(s||'').replace(/\D/g,''); }
-
-/* ★ 出生年月日字串 → 正規化（支援民國年），回傳 display / iso / date */
-function normalizeBirthdayInput(raw){
-  let s = String(raw || '').trim();
-  if(!s) return null;
-
-  // 只保留數字
-  const digits = s.replace(/\D/g, '');
-  if (digits.length < 5) return null; // 至少 y m d = 1+2+2
-
-  const len = digits.length;
-  const day = parseInt(digits.slice(-2), 10);
-  const month = parseInt(digits.slice(-4, -2), 10);
-  const yearPart = digits.slice(0, len - 4);
-  if (!yearPart) return null;
-  let year = parseInt(yearPart, 10);
-
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
-
-  // 民國年處理：任何 <1911 的年份視為民國年
-  if (year < 1911) {
-    year = year + 1911;
+function unlockTTS(){
+  if(!('speechSynthesis' in window)){ alert('此瀏覽器不支援語音播報'); return false; }
+  loadVoices();
+  if(typeof speechSynthesis.onvoiceschanged !== 'undefined'){
+    speechSynthesis.onvoiceschanged = () => loadVoices();
   }
+  try{ speechSynthesis.resume(); }catch(e){}
+  Voice.unlocked = true; Voice.ready = true; return true;
+}
+function speakText(txt){
+  if(!Voice.ready || !txt) return;
+  if (!Voice.enabled && !speakText._oneshot) return;
+  if (Voice.timer){ clearTimeout(Voice.timer); Voice.timer = null; }
+  const play = () => {
+    const warm = new SpeechSynthesisUtterance('\u00A0');
+    warm.lang = (Voice.zhVoice && Voice.zhVoice.lang) || 'zh-TW';
+    warm.rate = TTS_RATE; warm.pitch = 1; warm.volume = 0;
 
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const safety = setTimeout(() => {
+      try{ speechSynthesis.cancel(); }catch(e){}
+      reallySpeak(txt);
+    }, WARM_SAFETY_MS);
 
-  const dt = new Date(year, month - 1, day);
-  if (isNaN(dt.getTime())) return null;
-  if (dt.getFullYear() !== year || dt.getMonth() + 1 !== month || dt.getDate() !== day) return null;
+    warm.onend = () => {
+      clearTimeout(safety);
+      setTimeout(() => reallySpeak(txt), WARM_PLAY_DELAY);
+    };
 
-  const yyyy = String(year);
-  const mm = String(month).padStart(2,'0');
-  const dd = String(day).padStart(2,'0');
-
-  return {
-    display: `${yyyy}/${mm}/${dd}`,   // 顯示用
-    iso: `${yyyy}-${mm}-${dd}`,       // 傳給後端用
-    date: dt
+    try{ speechSynthesis.resume(); }catch(e){}
+    speechSynthesis.speak(warm);
   };
-}
 
-/* 身分證正規化 */
-function normalizeTaiwanId(raw){
-  if(raw==null) return "";
-  let s = String(raw).trim().normalize('NFKC');
-  s = s.replace(/\s+/g,'');
-  s = s.toUpperCase();
-  return s;
-}
-
-/* 台灣身分證驗證 */
-function validateTaiwanIdCore(id){
-  if(!/^[A-Z][12]\d{8}$/.test(id)) return false;
-  const codeMap = {A:10,B:11,C:12,D:13,E:14,F:15,G:16,H:17,I:34,J:18,K:19,L:20,M:21,N:22,O:35,P:23,Q:24,R:25,S:26,T:27,U:28,V:29,W:32,X:30,Y:31,Z:33};
-  const n = codeMap[id[0]]; if(n===undefined) return false;
-  const X = Math.floor(n/10), Y = n%10;
-  const digits = id.slice(1).split('').map(ch=>parseInt(ch,10));
-  const weights = [8,7,6,5,4,3,2,1,1];
-  let sum = X*1 + Y*9;
-  for(let i=0;i<digits.length;i++) sum += digits[i]*weights[i];
-  return (sum % 10) === 0;
-}
-function validateTaiwanId(raw){ return validateTaiwanIdCore(normalizeTaiwanId(raw)); }
-
-/* reCAPTCHA 載入（動態載入，避免重覆掛 script） */
-let recaptchaLoaded=false, recaptchaLoading=null;
-function loadRecaptcha(){
-  if(!RECAPTCHA_SITE_KEY) return Promise.resolve();
-  if(recaptchaLoaded) return Promise.resolve();
-  if(recaptchaLoading) return recaptchaLoading;
-  recaptchaLoading=new Promise((resolve,reject)=>{
-    const s=document.createElement("script");
-    s.src="https://www.google.com/recaptcha/api.js?render="+encodeURIComponent(RECAPTCHA_SITE_KEY);
-    s.async=true; s.defer=true;
-    s.onload=()=>{recaptchaLoaded=true;resolve();};
-    s.onerror=()=>reject(new Error("recaptcha_load_fail"));
-    document.head.appendChild(s);
-  });
-  return recaptchaLoading;
-}
-async function getRecaptchaToken(){
-  try{
-    if(!RECAPTCHA_SITE_KEY) return "";
-    await loadRecaptcha();
-    return await new Promise(res=>{
-      grecaptcha.ready(()=>grecaptcha.execute(RECAPTCHA_SITE_KEY,{action:"submit"}).then(t=>res(t)).catch(()=>res("")));
-    });
-  }catch(_){return"";}
-}
-function aesEnc(payload,ttlMs=10*60*1000){
-  const obj={...payload}; if(ttlMs&&Number.isFinite(ttlMs)) obj.exp=Date.now()+ttlMs;
-  const cipher=CryptoJS.AES.encrypt(JSON.stringify(obj),AES_KEY).toString();
-  return encodeURIComponent(cipher);
-}
-
-/* ====== 轉圈元件 ====== */
-function createSpinner(size="md"){
-  const root=document.createElement("span");
-  root.className="spinner-bars"+(size==="sm"?" spinner-sm":"");
-  for(let i=0;i<12;i++){ root.appendChild(document.createElement("i")); }
-  return root;
-}
-function mountSpinner(target,{size="md",label=""}={}){
-  const el = (typeof target==="string") ? document.querySelector(target) : target;
-  if(!el) return null;
-  el.innerHTML="";
-  const s=createSpinner(size);
-  el.appendChild(s);
-  if(label){
-    const t=document.createElement("span");
-    t.className="ms-2"; t.textContent=label;
-    el.appendChild(t);
+  if (speechSynthesis.speaking || speechSynthesis.pending){
+    try{ speechSynthesis.cancel(); }catch(e){}
+    setTimeout(play, WARM_CANCEL_DELAY);
+  } else {
+    setTimeout(play, WARM_PLAY_DELAY);
   }
-  return s;
+}
+function reallySpeak(txt){
+  const safeTail = String(txt).replace(/[~～]+$/g,'。');
+  const prefix = isWinChrome ? '\u3000，' : '';
+  const u = new SpeechSynthesisUtterance(prefix + safeTail);
+  if(!Voice.zhVoice || !Voice.voices.length) loadVoices();
+  if(Voice.zhVoice) u.voice = Voice.zhVoice;
+  u.lang = (Voice.zhVoice && Voice.zhVoice.lang) || 'zh-TW';
+  u.rate = TTS_RATE;  u.pitch = 1;  u.volume = 1;
+  u.onstart = ()=>{ try{ speechSynthesis.resume(); }catch(e){} };
+  speechSynthesis.speak(u);
 }
 
-/* ====== DOM / Utils ====== */
-const $=id=>document.getElementById(id);
-const $title=$('calTitle'),$whead=$('whead'),
-      $days=$('days'),$panel=$('dayPanel'),$picked=$('picked'),$skel=$('calSkeleton');
-const pad2=n=>String(n).padStart(2,'0');
-const ymd=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
-const W=['日','一','二','三','四','五','六'];
-const parseYmd=s=>{
-  const [y,m,d]=String(s||'').split('-').map(Number);
-  return new Date(y,m-1,d);
-};
-const fmtMD=d=>`${d.getMonth()+1}/${d.getDate()}`;
-const fmtRangeDate=d=>`${fmtMD(d)}（${W[d.getDay()]}）`;
-const NOW=new Date(); 
-const TODAY_KEY=ymd(NOW);
-const TODAY_START=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate());
-let WINDOW_MIN=null,WINDOW_MAX=null; 
+/* 語音核取方塊 */
+const voiceToggle = document.getElementById('voiceToggle');
+const bell = document.getElementById('bell');
+const srStatus = document.getElementById('srStatus');
+voiceToggle.addEventListener('change', ()=>{
+  voiceToggle.setAttribute('aria-checked', voiceToggle.checked ? 'true' : 'false');
+  bell.textContent = voiceToggle.checked ? '🔔' : '🔕';
+  if(voiceToggle.checked){
+    if(!Voice.unlocked && !unlockTTS()){ voiceToggle.checked=false; voiceToggle.setAttribute('aria-checked','false'); bell.textContent='🔕'; return; }
+    Voice.enabled = true;
+    speakText._oneshot = true;
+    speakText('已開啟語音叫號提醒。');
+    speakText._oneshot = false;
+    srStatus.textContent = '已開啟語音叫號提醒';
+  }else{
+    Voice.enabled = false;
+    try{ speechSynthesis.cancel(); }catch(e){}
+    srStatus.textContent = '已關閉語音叫號提醒';
+  }
+});
+window.addEventListener('touchend', function once(){
+  if(!Voice.unlocked){ unlockTTS(); }
+  window.removeEventListener('touchend', once, true);
+}, true);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){
+    try{ speechSynthesis.resume(); }catch(e){}
+  }
+});
+
+/* ===== 抓號與顯示 ===== */
+const POLL_MS = 3000;
+const REQUEST_TIMEOUT = 8000; // fetch 與 JSONP 共用的整輪等待上限
+const FETCH_TIMEOUT = REQUEST_TIMEOUT;
+const JSONP_TIMEOUT = REQUEST_TIMEOUT;
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxHI3ypQqfqnEpXVDO6WJq0EQjkMWzjpIvosYGwu43MP9iiXjofRnZOzOnhAXedwCLw/exec";
+
+async function fetchJSON(signal) {
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), FETCH_TIMEOUT);
+  const cancel = () => { clearTimeout(t); ctrl.abort(); };
+  if (signal?.aborted) cancel();
+  else signal?.addEventListener('abort', cancel, { once:true });
+  try {
+    const res = await fetch(`${GAS_URL}?ts=${Date.now()}`, { cache:'no-store', signal: ctrl.signal });
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+    signal?.removeEventListener('abort', cancel);
+  }
+}
+function fetchJSONP(signal) {
+  return new Promise((resolve, reject) => {
+    const cb = 'onClinicData_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    const s = document.createElement('script');
+    let settled = false;
+    const timeout = setTimeout(() => finish(new Error('JSONP timeout')), JSONP_TIMEOUT);
+    function cleanup(){
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', cancel);
+      s.onerror = null;
+      delete window[cb];
+      s.remove();
+    }
+    function finish(err, data){
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (err) reject(err); else resolve(data);
+    }
+    function cancel(){ finish(new DOMException('JSONP cancelled', 'AbortError')); }
+    window[cb] = (data) => finish(null, data);
+    s.onerror = () => finish(new Error('JSONP load error'));
+    if (signal?.aborted) { cancel(); return; }
+    signal?.addEventListener('abort', cancel, { once:true });
+    try {
+      s.src = `${GAS_URL}?callback=${cb}&ts=${Date.now()}`;
+      document.head.appendChild(s);
+    } catch (err) {
+      finish(err);
+    }
+  });
+}
+
+function validateClinicData(data){
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('API 回傳資料格式無效');
+  }
+  const raw = data.number;
+  if ((typeof raw !== 'number' && typeof raw !== 'string') ||
+      (typeof raw === 'string' && raw.trim() === '')) {
+    throw new Error('API 未提供有效叫號');
+  }
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n >= 10000) {
+    throw new Error('API 叫號必須為 0–9999 的整數');
+  }
+  return { ...data, number: n };
+}
+
+function fetchDataSmart() {
+  return new Promise((resolve, reject) => {
+    const ctrl = new AbortController();
+    let settled = false;
+    let failures = 0;
+    const timeout = setTimeout(() => {
+      finish(new Error('叫號請求超過 8 秒'));
+    }, REQUEST_TIMEOUT);
+    function finish(err, data){
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      // 取消尚未完成的 fetch，並清理 JSONP callback、script 與計時器。
+      ctrl.abort();
+      if (err) reject(err); else resolve(data);
+    }
+    function observe(request, label){
+      request.then(validateClinicData).then(data => {
+        finish(null, data);
+      }).catch(err => {
+        if (settled) return; // 忽略落敗請求與主動取消，不重複更新或報錯。
+        console.warn(`叫號 ${label} 失敗：`, err);
+        failures += 1;
+        if (failures === 2) finish(new Error('fetch 與 JSONP 均未取得有效叫號'));
+      });
+    }
+    // 同一輪立即啟動兩條請求；單一路徑失敗不影響另一條。
+    observe(fetchJSON(ctrl.signal), 'fetch');
+    observe(fetchJSONP(ctrl.signal), 'JSONP');
+  });
+}
+
+function renderStatusPill(data){
+  const box = document.getElementById('statusPill');
+  box.innerHTML = '';
+  if (data.holiday === true){
+    const el = document.createElement('div');
+    el.className = 'hex red';
+    el.textContent = '現在時間沒有門診，休診中';
+    box.appendChild(el);
+  } else if (data.closed === true){
+    const el = document.createElement('div');
+    el.className = 'hex coral';
+    el.textContent = '當前時段已停止掛號';
+    box.appendChild(el);
+  }
+}
+
+let lastNumber = '';
+let lastSuccessfulData = null;
+let isLoading = false;
+function setBigNumber(nText){
+  const el = document.getElementById('bigNumber');
+  el.textContent = nText;
+}
+
+function showNumberOverlay(state){
+  const message = state === 'error'
+    ? '連線暫時異常，更新中'
+    : '讀取叫號中';
+  document.getElementById('numberLoadingText').textContent = message;
+  document.getElementById('numberLoadingOverlay').hidden = false;
+  document.getElementById('numberWrap').classList.add('is-obscured');
+  srStatus.textContent = lastSuccessfulData
+    ? `${message}，最後成功看診號碼：${lastSuccessfulData.number}`
+    : message;
+}
+
+function hideNumberOverlay(){
+  document.getElementById('numberLoadingOverlay').hidden = true;
+  document.getElementById('numberWrap').classList.remove('is-obscured');
+}
+
+function renderConnectionStatus(){
+  // 六邊形只顯示真正的門診狀態，連線提示顯示在號碼遮罩。
+  renderStatusPill(lastSuccessfulData || {});
+  showNumberOverlay(lastSuccessfulData ? 'error' : 'loading');
+}
+
+async function fetchNumber(){
+  if (isLoading) return;
+  isLoading = true;
+  try{
+    const data = await fetchDataSmart();
+    const n = data.number;
+    const current = String(n);     // 不補 0
+    const changed = current !== lastNumber;
+    lastSuccessfulData = data;
+    lastNumber = current;
+    renderStatusPill(data);
+    setBigNumber(current);
+    hideNumberOverlay();
+    srStatus.textContent = `目前看診號碼：${current}`;
+    if (changed && Voice.enabled) speakNumber(n);
+  }catch(err){
+    console.warn('叫號更新失敗，保留最後成功資料並繼續重試：', err);
+    if (lastSuccessfulData) setBigNumber(String(lastSuccessfulData.number));
+    renderConnectionStatus();
+  }finally{
+    isLoading = false;
+  }
+}
+
+/* 中文數字唸法 */
+function zhRead(n){
+  n = Math.max(0, Math.min(9999, Math.floor(n)));
+  const d = ['零','一','二','三','四','五','六','七','八','九'];
+  if (n === 0) return '零';
+  let out='', q=Math.floor(n/1000), h=Math.floor((n%1000)/100), t=Math.floor((n%100)/10), u=n%10;
+  if(q>0){ out+=d[q]+'千'; if(h===0 && (t>0||u>0)) out+='零'; }
+  if(h>0){ out+=d[h]+'百'; if(t===0 && u>0) out+='零'; }
+  if(t>0){ out+=(t===1 && q===0 && h===0 ? '' : d[t])+'十'; }
+  if(u>0){ out+=d[u]; }
+  return out;
+}
+function speakNumber(n){
+  const zh = zhRead(n);
+  speakText(`${zh}號、${zh}號請進診間。`);
+}
 
 /* 現在時間 */
-function fmtNowLabel(){
-  const d=new Date();
-  const w='日一二三四五六'[d.getDay()];
-  return `今天是 ${d.getMonth()+1}/${d.getDate()}（${w}）`;
-}
-(function bootNowTime(){
-  const el=document.getElementById('nowTime');
-  if(!el) return;
-  const tick=()=>{ el.textContent=fmtNowLabel(); };
-  tick(); setInterval(tick, 60*1000);
-})();
-
-/* 遮罩 */
-const $mask = $('mask');
-function showMask(txt){
-  $mask.style.display='flex';
-  mountSpinner($mask.querySelector('.spin-here'),{size:"md"});
-  const t=$mask.querySelector('.loading-text');
-  if(t) t.textContent = txt || '處理中，請稍候';
-}
-function hideMask(){ $mask.style.display='none'; }
-
-/* 週標題 */
-$whead.innerHTML=W.map(w=>`<div class="wday">${w}</div>`).join('');
-
-/* 骨架 7×6 */
-(function buildSkeleton(){
-  let h=''; for(let i=0;i<42;i++) h+=`<div class="skel-day" aria-hidden="true"></div>`;
-  $skel.innerHTML=h;
-})();
-
-/* 顯示/隱藏日期格骨架 */
-function toggleSkeleton(on){
-  $skel.style.display = on ? 'grid' : 'none';
-  $days.style.display = on ? 'none' : 'grid';
+const pad2 = n => String(n).padStart(2,'0');
+function updateTWTime(){
+  const el=document.getElementById('twTime');
+  const now = new Date();
+  const tw = new Date(now.toLocaleString('en-US', { timeZone:'Asia/Taipei' }));
+  const wMap=['日','一','二','三','四','五','六'];
+  el.textContent = `${tw.getFullYear()}/${pad2(tw.getMonth()+1)}/${pad2(tw.getDate())} (${wMap[tw.getDay()]}) ${pad2(tw.getHours())}:${pad2(tw.getMinutes())}:${pad2(tw.getSeconds())}`;
 }
 
-function showCalendarError(msg){
-  $title.textContent='目前預約資料載入失敗';
-  $days.innerHTML=`<div class="calendar-error">${msg||'目前預約資料載入失敗，請稍後再試'}</div>`;
-  $days.style.display='grid';
-  $panel.style.display='none';
-}
-
-/* 可預約視窗 */
-async function getWindow(){
-  try{
-    const r=await axios.get(API,{params:withClient({action:'getWindow',t:Date.now()}),timeout:API_TIMEOUT});
-    const data=r.data||{};
-    if(!data?.startDate && data?.start==null) throw new Error('missing_start');
-    if(!data?.endDate && data?.end==null) throw new Error('missing_end');
-    const min=data?.startDate?new Date(data.startDate):new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()+Number(data.start));
-    const max=data?.endDate?new Date(data.endDate):new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()+Number(data.end));
-    WINDOW_MIN=new Date(min.getFullYear(),min.getMonth(),min.getDate());
-    WINDOW_MAX=new Date(max.getFullYear(),max.getMonth(),max.getDate());
-    if(isNaN(WINDOW_MIN.getTime()) || isNaN(WINDOW_MAX.getTime()) || WINDOW_MIN>WINDOW_MAX) throw new Error('bad_window');
-    return true;
-  }catch{
-    WINDOW_MIN=null;
-    WINDOW_MAX=null;
-    return false;
+/* 啟動 */
+async function pollLoop(){
+  try {
+    await fetchNumber();
+  } catch (err) {
+    console.error('叫號輪詢發生錯誤：', err);
+  } finally {
+    // 前一次請求（含 JSONP）結束後才安排下一次，避免請求重疊。
+    const delay = document.hidden ? 5000 : POLL_MS;
+    setTimeout(pollLoop, delay);
   }
 }
-
-/* 開放區間標頭 */
-function renderRollingHeader(){
-  if(!WINDOW_MIN || !WINDOW_MAX){
-    $title.textContent='目前可預約區間載入失敗';
-    return;
-  }
-  $title.innerHTML=`目前開放預約日期：<br>${fmtRangeDate(WINDOW_MIN)}～${fmtRangeDate(WINDOW_MAX)}`;
-}
-
-/* 逐日 slots（只抓後端回傳的開放區間） */
-function normalizeDayMeta(data,key){
-  data=data||{};
-  if (!Array.isArray(data) && data && data.nonce && data.sig && data.exp) {
-    nonceStore[key] = {nonce:String(data.nonce), sig:String(data.sig), exp:Number(data.exp)};
-  }
-  const raw=Array.isArray(data)?data:(Array.isArray(data?.slots)?data.slots:[]);
-  const slots=(raw||[]).map(x=>{
-    const limit=Number(x.limit)||0, used=Number(x.used)||0, remain=Math.max(0,limit-used);
-    const label=String(x.label||'');
-    const slot=label.includes('早')?'early':label.includes('午')?'noon':label.includes('晚')?'night':label.includes('約')?'appt':'other';
-    const time=x.time||x.timeRange||'';
-    const doctor=String(x.doctor||'').replace(/[［\[]|[］\]]/g,'');
-    const rawStatus=String(x.status||'').toLowerCase();
-    const status=(limit<=0 || rawStatus==='closed')?'closed':((remain<=0 || rawStatus==='full')?'full':'open');
-    return {slot,cap:limit,used,remain,status,time,doctor,label};
-  });
-  const stop = (data && data.stop===true);
-  const hasClinic = data?.hasClinic !== false;
-  const closedType = String(data?.closedType||'').trim();
-  return {date:key,slots,stop,hasClinic,closedType};
-}
-
-async function fetchRangeDays(startDate,endDate){
-  try{
-    const startKey=ymd(startDate), endKey=ymd(endDate);
-    const r=await axios.get(API,{params:withClient({action:'getSlotsRange',start:startKey,end:endKey,t:Date.now()}),timeout:API_TIMEOUT});
-    const days=Array.isArray(r.data?.days)?r.data.days:[];
-    if(!days.length) throw new Error('empty_range');
-    const map={};
-    days.forEach(d=>{
-      const key=String(d.date||'').trim();
-      if(key) map[key]=normalizeDayMeta(d,key);
-    });
-    return map;
-  }catch(_){
-    const jobs=[];
-    for(let cur=new Date(startDate); cur<=endDate; cur=addDays(cur,1)){
-      const key=ymd(cur);
-      jobs.push((async()=>{
-        try{
-          const r=await axios.get(API,{params:withClient({action:'getSlots',date:key,t:Date.now()}),timeout:API_TIMEOUT});
-          return normalizeDayMeta(r.data||{},key);
-        }catch{ return {date:key,slots:[],stop:false,hasClinic:true,closedType:''}; }
-      })());
-    }
-    const arr=await Promise.all(jobs); const map={}; arr.forEach(d=>map[d.date]=d); return map;
-  }
-}
-
-function slotLabel(s){
-  const mapSlot={early:'早診',noon:'午診',night:'晚診',appt:'約診'};
-  return mapSlot[s.slot]||s.label||'診別';
-}
-
-function shortSlotLabel(label){
-  const text=String(label||'');
-  if(text.includes('早')) return '早';
-  if(text.includes('午')) return '午';
-  if(text.includes('晚')) return '晚';
-  if(text.includes('約')) return '約';
-  if(text.includes('停')) return '停';
-  if(text.includes('休')) return '休';
-  return text.slice(0,1);
-}
-
-function visibleSlots(slots){
-  return (slots||[])
-    .map((slot,idx)=>({slot,idx}))
-    .filter(({slot})=>slot.status!=='closed' && Number(slot.cap)>0);
-}
-
-function chooseDefaultSlot(slots){
-  const openSlots=(slots||[]).filter(s=>
-    s &&
-    s.status==='open' &&
-    Number(s.cap)>0
-  );
-
-  if(!openSlots.length) return null;
-  if(openSlots.length===1) return openSlots[0];
-
-  const appt=openSlots.find(s=>s.slot==='appt' || String(s.label||'').includes('約'));
-  if(appt) return appt;
-
-  const early=openSlots.find(s=>s.slot==='early' || String(s.label||'').includes('早'));
-  if(early) return early;
-
-  const noon=openSlots.find(s=>s.slot==='noon' || String(s.label||'').includes('午'));
-  if(noon) return noon;
-
-  const night=openSlots.find(s=>s.slot==='night' || String(s.label||'').includes('晚'));
-  if(night) return night;
-
-  return openSlots[0];
-}
-
-function hydrateRollingCalendar(dayMap){
-  if(!WINDOW_MIN || !WINDOW_MAX){
-    $days.innerHTML='';
-    return;
-  }
-  let html='';
-  for(let i=0;i<WINDOW_MIN.getDay();i++) html+=`<div class="calendar-placeholder" aria-hidden="true"></div>`;
-
-  for(let cur=new Date(WINDOW_MIN); cur<=WINDOW_MAX; cur=addDays(cur,1)){
-    const key=ymd(cur);
-    const meta=dayMap[key]||{slots:[],stop:false,hasClinic:true,closedType:''};
-    const isToday=(key===TODAY_KEY);
-    let inner=`<div class="d">${fmtMD(cur)}</div>`;
-
-    if(meta.stop===true){
-      const closedType = meta.closedType === '休診' ? '休診' : '停診';
-      const cls = closedType === '休診' ? 'rest' : 'stop';
-      inner+=`<div class="meta"><span class="pill ${cls}">${shortSlotLabel(closedType)}</span></div>`;
-    }else if(meta.closed===true || meta.rest===true || meta.off===true){
-      inner+=`<div class="meta"><span class="pill full">${shortSlotLabel('休診')}</span></div>`;
-    }else{
-      const slots=visibleSlots(meta.slots);
-      const pills=slots.map(({slot:s,idx})=>{
-        const label=slotLabel(s);
-        const disabled=(s.status!=='open' || Number(s.cap)<=0);
-        const cls=`pill slot-choice ${s.slot}${s.status==='full'?' full':''}${disabled?' disabled':''}`;
-        return `<span class="${cls}" data-index="${idx}" data-slot="${s.slot}" data-label="${label}" data-status="${s.status}" ${disabled?'aria-disabled="true"':''}><span class="lbl">${shortSlotLabel(label)}</span></span>`;
-      }).join('');
-      inner+=`<div class="meta">${pills}</div>`;
-    }
-
-    html+=`<div class="day clickable${isToday?' today':''}" data-ymd="${key}">${inner}</div>`;
-  }
-
-  const tail=(6-WINDOW_MAX.getDay()+7)%7;
-  for(let i=0;i<tail;i++) html+=`<div class="calendar-placeholder" aria-hidden="true"></div>`;
-  $days.innerHTML=html;
-
-  $days.querySelectorAll('.day.clickable').forEach(day=>{
-    day.addEventListener('click',()=>{
-      $days.querySelectorAll('.day.selected').forEach(x=>x.classList.remove('selected'));
-      $panel.querySelectorAll('.tile.selected').forEach(x=>x.classList.remove('selected'));
-      $('date').value='';
-      $('slot').value='';
-      day.classList.add('selected');
-      const meta=dayMap[day.dataset.ymd]||{};
-      const defaultSlot=chooseDefaultSlot((meta.slots||[]));
-      openDay(day.dataset.ymd, meta, defaultSlot);
-      if(defaultSlot){
-        $('date').value=day.dataset.ymd;
-        $('slot').value=slotLabel(defaultSlot);
-      }
-      $panel.scrollIntoView({behavior:'smooth',block:'start'});
-    });
-  });
-}
-
-/* 確認資訊 */
-function openDay(dateYMD, meta, selectedSlot){
-  const d=parseYmd(dateYMD);
-  const slots=visibleSlots(meta?.slots).map(x=>x.slot);
-  let html = `<div class="head">${fmtMD(d)}（星期${W[d.getDay()]}）</div>`;
-
-  if(meta?.stop===true){
-    const closedType = meta.closedType === '休診' ? '休診' : '停診';
-    const cls = closedType === '休診' ? 'rest' : 'stop';
-    html+=`<div class="slot-grid"><div class="tile full ${cls}"><div class="main"><strong>${closedType}</strong></div></div></div>`;
-  }else if(!slots.length){
-    html+=`<div class="slot-grid"><div class="tile"><div class="main">當日無門診</div></div></div>`;
-  }else{
-    html+=`<div class="slot-grid">`;
-    html+=slots.map(s=>{
-      const label=slotLabel(s);
-      const time=s.time||'';
-      const doc=s.doctor?`［${s.doctor}］`:'';
-      const rem=Math.max(0,s.remain);
-      const selected=s===selectedSlot;
-      const closed=(s.status!=='open' || Number(s.cap)<=0);
-      const baseCls = `tile ${s.slot}` + (selected ? ' selected' : '') + (closed ? ' full' : '') + (!closed ? ' selectable' : '');
-      const right = closed
-        ? `<div class="remain"><span class="status-full">${s.status==='full'?'已額滿':'不可預約'}</span></div>`
-        : `<div class="remain">剩餘 ${rem}/${s.cap} 人${selected?'<span class="selected-summary">已選擇</span>':''}</div>`;
-      return `<div class="${baseCls}" data-date="${dateYMD}" data-slot="${s.slot}" data-label="${label}" data-status="${s.status}">
-        <div class="main"><strong>${label}</strong> ${time} ${doc}</div>
-        ${right}
-      </div>`;
-    }).join('');
-    html+=`</div>`;
-  }
-
-  $panel.innerHTML=html;
-  $panel.style.display='block';
-  $panel.querySelectorAll('.tile.selectable').forEach((tile,idx)=>{
-    const slot=slots[idx];
-    tile.addEventListener('click',()=>selectRow(tile, slot, meta));
-  });
-}
-
-function selectRow(row, slotData, meta){
-  if(!slotData || slotData.status !== 'open' || Number(slotData.cap)<=0){
-    return;
-  }
-  $days.querySelectorAll('.slot-choice.selected').forEach(x=>x.classList.remove('selected'));
-  $days.querySelectorAll('.day.selected').forEach(x=>x.classList.remove('selected'));
-  $panel.querySelectorAll('.tile.selected').forEach(x=>x.classList.remove('selected'));
-  row.classList.add('selected');
-  const day=row.closest('.day');
-  if(day) day.classList.add('selected');
-  if(!day){
-    const calDay=$days.querySelector(`.day[data-ymd="${row.dataset.date}"]`);
-    if(calDay) calDay.classList.add('selected');
-  }
-  $('date').value=row.dataset.date;
-  $('slot').value=slotLabel(slotData);
-  openDay(row.dataset.date, meta, slotData);
-  $panel.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-/* 身分證：輸入時自動大寫；送出前再做一次正規化 */
-$('idnum').addEventListener('input',e=>{
-  const p=e.target.selectionStart; e.target.value=e.target.value.toUpperCase();
-  try{ e.target.setSelectionRange(p,p);}catch(_){}
-});
-/* 聯絡電話：只允許數字且最多 10 碼 */
-$('phone').addEventListener('input', e=>{
-  const p = e.target.selectionStart;
-  const cleaned = onlyDigits(e.target.value).slice(0,10);
-  e.target.value = cleaned;
-  try{ const pos = Math.min(p, cleaned.length); e.target.setSelectionRange(pos, pos); }catch(_){}
-});
-
-/* ★ 出生年月日：強制數字＋自動隱藏提示文字 */
-/* ★ 出生年月日：純數字輸入，blur 時解析民國/西元 → yyyy/mm/dd */
-(function setupBirthdayInput(){
-  const input = $('birthday');
-  const hint  = $('dateHint');
-
-  if (!input) return;
-
-  // 保險起見再指定一次數字鍵盤
-  input.setAttribute('inputmode', 'numeric');
-
-  // 聚焦時：隱藏提示
-  input.addEventListener('focus', () => {
-    if (hint) hint.style.display = 'none';
-  });
-
-  // 輸入中：只保留數字，最多 8 碼（YYYYMMDD 或 民國年+MMDD）
-  input.addEventListener('input', (e) => {
-    const el = e.target;
-    const pos = el.selectionStart;
-
-    const cleaned = onlyDigits(el.value).slice(0, 8);
-    el.value = cleaned;
-
-    // 游標盡量維持在原來位置
-    try {
-      const newPos = Math.min(pos, cleaned.length);
-      el.setSelectionRange(newPos, newPos);
-    } catch (_) {}
-
-    if (hint) hint.style.display = el.value ? 'none' : '';
-  });
-
-  // 失焦時：解析並轉成 yyyy/mm/dd（同時處理民國年）
-  input.addEventListener('blur', () => {
-    const raw = input.value.trim();
-    if (!raw) {
-      if (hint) hint.style.display = '';
-      return;
-    }
-
-    const norm = normalizeBirthdayInput(raw);
-    if (!norm) {
-      alert('出生年月日格式不正確，請輸入：「西元」年月日例如 19901120；或「民國」年月日例如 720309、1120101。');
-      // 不再自動 focus，避免一直跳出視窗
-      return;
-    }
-
-    // 成功才格式化顯示
-    input.value = norm.display; // yyyy/mm/dd
-    if (hint) hint.style.display = 'none';
-  });
-})();
-
-/* 送出 */
-let submitting=false;
-$('submitBtn').addEventListener('click',async(e)=>{
-  e.preventDefault(); if(submitting) return;
-  const d=($('date').value||'').trim(),
-        s=($('slot').value||'').trim(),
-        n=($('name').value||'').trim(),
-        rawBirthday=($('birthday').value||'').trim(),
-        rawId=($('idnum').value||''),
-        id = normalizeTaiwanId(rawId),
-        phRaw=($('phone').value||'').trim(),
-        ag=$('agree').checked;
-
-  $('idnum').value = id;
-
-  if(!d||!s||!n||!rawBirthday||!id||!phRaw||!ag){
-    alert('資料未填寫完整，請檢查後重試');
-    return;
-  }
-
-  // 解析生日（支援民國年），轉 iso yyyy-mm-dd
-  const bNorm = normalizeBirthdayInput(rawBirthday);
-  if (!bNorm) {
-    alert('出生年月日格式不正確，請輸入「西元」年月日，例如 19901120；或「民國」年月日，例如 720309。');
-    $('birthday').focus();
-    return;
-  }
-  // 顯示欄位統一成 yyyy/mm/dd
-  $('birthday').value = bNorm.display;
-
-  const age=Math.floor((Date.now()-bNorm.date.getTime())/31536000000);
-  if(age<0||age>150){
-    alert('出生年月日不合理，請檢查後重試');
-    return;
-  }
-
-  if(!validateTaiwanIdCore(id)){
-    alert('身份證字號驗證錯誤，請檢查是否有全形數字或多餘空白'); 
-    return; 
-  }
-
-  const ph = onlyDigits(phRaw);
-  if(!/^\d{10}$/.test(ph)){ alert('聯絡電話字數錯誤，請檢查後重試'); return; }
-
-  try{
-    submitting=true; $('submitBtn').disabled=true; showMask('預約中，請稍候');
-    const recaptchaToken=await getRecaptchaToken(); $('g-recaptcha-response').value=recaptchaToken;
-
-    const params={
-      action:'submit',
-      date:d,
-      slot:s,
-      name:n,
-      birthday:bNorm.iso, // ★ 傳給後端用 yyyy-mm-dd
-      id:id,
-      phone:ph,
-      recaptchaToken,
-      t:Date.now()
-    };
-    if (nonceStore[d]) {
-      params.nonce = nonceStore[d].nonce;
-      params.sig   = nonceStore[d].sig;
-      params.exp   = nonceStore[d].exp;
-    }
-
-    const r=await axios.get(API,{params:withClient(params)});
-    if(!r.data?.ok){ alert(r.data?.message||'送出失敗，請稍後再試一次'); return; }
-    const idFromApi=r?.data?.id||r?.data?.Id||r?.data?.bookingId||r?.data?.data?.id;
-    const receipt=r?.data?.receipt||r?.data?.rcpt||'';
-    try{ if(receipt&&idFromApi) sessionStorage.setItem('rcpt:'+String(idFromApi),String(receipt));
-         sessionStorage.setItem('lastBookingId',String(idFromApi));
-         sessionStorage.setItem('lastReservation', JSON.stringify({
-           id:idFromApi,
-           receipt,
-           date:r.data.date||d,
-           slot:r.data.slot||s,
-           name:r.data.name||n,
-           num:r.data.num||'',
-           submittedAt:r.data.submittedAt||''
-         })); }catch(_){}
-    const baseDir=new URL('.',location.href), successUrl=new URL('success.html',baseDir);
-    successUrl.searchParams.set('cipher',aesEnc({id:idFromApi,receipt}));
-    location.assign(successUrl.href);
-  }catch(err){ console.error(err); alert('送出失敗，請稍後再試'); }
-  finally{ submitting=false; $('submitBtn').disabled=false; hideMask(); }
-});
-
-/* Modal 綁定 */
-let noticeModalInst=null;
-$('openRules').addEventListener('click',()=>new bootstrap.Modal(document.getElementById('rulesModal')).show());
-$('showNotice').addEventListener('click',e=>{
-  e.preventDefault();
-  noticeModalInst=new bootstrap.Modal(document.getElementById('noticeModal'));
-  noticeModalInst.show();
-});
-$('agreeConfirm').addEventListener('click',()=>{ $('agree').checked=true; if(noticeModalInst) noticeModalInst.hide(); });
-
-/* 啟動週曆 */
-async function loadCalendarData(){
-  try{
-    const r=await axios.get(API,{params:withClient({action:'getCalendar',t:Date.now()}),timeout:API_TIMEOUT});
-    const data=r.data||{};
-    if(!data.ok || !data.startDate || !data.endDate || !Array.isArray(data.days)) throw new Error('bad_calendar');
-    const min=parseYmd(data.startDate);
-    const max=parseYmd(data.endDate);
-    WINDOW_MIN=new Date(min.getFullYear(),min.getMonth(),min.getDate());
-    WINDOW_MAX=new Date(max.getFullYear(),max.getMonth(),max.getDate());
-    if(isNaN(WINDOW_MIN.getTime()) || isNaN(WINDOW_MAX.getTime()) || WINDOW_MIN>WINDOW_MAX) throw new Error('bad_window');
-    renderRollingHeader();
-    const map={};
-    data.days.forEach(d=>{
-      const key=String(d.date||'').trim();
-      if(key) map[key]=normalizeDayMeta(d,key);
-    });
-    hydrateRollingCalendar(map);
-    return true;
-  }catch(err){
-    console.warn('getCalendar fallback', err);
-    await getWindow();
-    renderRollingHeader();
-    if(!WINDOW_MIN || !WINDOW_MAX) throw new Error('missing_window');
-    const map=await fetchRangeDays(WINDOW_MIN, WINDOW_MAX);
-    hydrateRollingCalendar(map);
-    return true;
-  }
-}
-
-async function bootRollingCalendar(){
-  toggleSkeleton(true);
-  try{
-    await loadCalendarData();
-  }catch(err){
-    console.error('calendar init failed', err);
-    showCalendarError('目前預約資料載入失敗，請稍後再試');
-  }finally{
-    toggleSkeleton(false);
-  }
-}
-
-(async function init(){
-  try{
-    $('whead').innerHTML=['日','一','二','三','四','五','六'].map(w=>`<div class="wday">${w}</div>`).join('');
-    await bootRollingCalendar();
-  }catch(err){
-    console.error('page init failed', err);
-    showCalendarError('目前預約資料載入失敗，請稍後再試');
-  }finally{
-    hideMask();
-    toggleSkeleton(false);
-  }
-})();
+renderConnectionStatus();
+pollLoop();
+updateTWTime(); setInterval(updateTWTime, 1000);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
