@@ -12,6 +12,22 @@
 
 <!-- 備援：近似楷體（讓沒裝 woff2 也較一致） -->
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* 注意事項分段與時間膠囊：僅作用於此區塊 */
+.note-bubble.query-notice > p{margin:0;line-height:1.8}
+.note-bubble.query-notice > p + p{margin-top:8px}
+.note-bubble.query-notice .notice-pill{
+  display:inline-block;max-width:100%;vertical-align:baseline;
+  padding:2px 10px;margin:2px 0;border-radius:999px;
+  font-size:inherit;font-weight:700;line-height:1.5;
+  white-space:normal;overflow-wrap:anywhere;
+}
+.note-bubble.query-notice .notice-early{background:#e7f2ea;color:#236343}
+.note-bubble.query-notice .notice-noon{background:#fff2df;color:#995015}
+.note-bubble.query-notice .notice-night{background:#e7f0fb;color:#245a9c}
+.note-bubble.query-notice .notice-appt{background:#f9e7ee;color:#a13768}
+
+</style>
 </head>
 <body>
 <!-- 等待遮罩（轉圈圈） -->
@@ -29,7 +45,8 @@
   </div>
 
   <div class="note-bubble query-notice">
-    🔸 線上取消預約的截止時間為門診前一天；門診當天請改以電話取消，診所電話 (03) 515-2971。 
+    <p>🔸 線上取消預約的截止時間為門診前一天；門診當天請改以電話取消，診所電話 (03) 515-2971。</p>
+    <p>🔸 請於 <span class="notice-pill notice-early">早診10:30前</span>；<span class="notice-pill notice-noon">午診16:00前</span>；<span class="notice-pill notice-night">晚診20:00前</span>；<span class="notice-pill notice-appt">約診為門診結束前一小時</span> 到現場報到，逾時視同放棄，會釋出名額給現場掛號。</p>
   </div>
 
   <div id="normalBox">
